@@ -1,19 +1,23 @@
 <html>
-  <body>
-    <h1>Week 1</h1>
-
-    <h2>Mapping in the news</h2>
-    <a href="http://www.ericson.net/content/wp-content/uploads/2010/11/1896-map-alone-10001.png">First NYT Election Map</a>
+  <head>
+    <title>Class One | Mapping in the News | Intro to GIS</title>
+    <link rel="stylesheet" href="../stylesheets/reset.css">
+    <link rel="stylesheet" href="../stylesheets/tachyons.min.css">
+    <link rel="stylesheet" href="../stylesheets/tweaks.css">
+  </head>
+  <body class="sans-serif pa4 dark-gray f5 lh-copy black bg-light-gray">
+    <h2 class="bb b--black-20 ttu uppercase f2 b lh-title ma0 mb3">Mapping in the news</h2>
+    <a href="http://www.ericson.net/content/wp-content/uploads/2010/11/1896-map-alone-10001.png">First NYT Election Map</a><br>
     <a href="https://en.wikipedia.org/wiki/United_States_presidential_election,_1896#/media/File:ElectoralCollege1896.svg">It's wrong :(</a>
-    <h3>Early Digital Maps</h3>
-    <ul>
+    <h3 class="fw3 f4 b--black-20 lh-title mv2">Early Digital Maps</h3>
+    <ul class="list mv1">
       <li><a href="https://farm3.static.flickr.com/2179/2165837118_f74fbdc940_o.jpg">Chicago Crime</a></li>
       <li><a href="http://oakland.crimespotting.org/">Oakland Crimespotting</a></li>
       <li><a href="http://elections.nytimes.com/2008/results/president/explorer.html">Electoral Explorer</a></li>
       <li><a href="http://maps.latimes.com/neighborhoods/">Mapping LA</a>
     </ul>
-    <h3>Big Maps</h3>
-    <ul>
+    <h3 class="fw3 f4 b--black-20 lh-title mv2">Big Maps</h3>
+    <ul class="list mv1">
       <li><a href="https://glittering.blue/">Glittering Blue</a></li>
       <li><a href="http://graphics.latimes.com/how-fast-is-lafd/#11/34.1689/-118.5013">How fast is LAFD where you live?</a></li>
       <li><a href="http://projects.propublica.org/redistricting-maps/mcnerney">Rep. Jerry McNerney's District</a></li>
@@ -25,14 +29,14 @@
       <li><a href="https://projects.propublica.org/las-vegas-growth-map/">Welcome to Fabulous Las Vegas</a></li>
       <li><a href="http://projects.propublica.org/nyc-flood/">New Maps and a New Plan for New York</a>
     </ul>
-    <h3>Scrolling maps</h3>
-    <ul>
+    <h3 class="fw3 f4 b--black-20 lh-title mv2">Scrolling maps</h3>
+    <ul class="list mv1">
       <li><a href="http://www.nytimes.com/interactive/2014/07/03/world/middleeast/syria-iraq-isis-rogue-state-along-two-rivers.html">A Rogue State Along Two Rivers</a></li>
       <li><a href="https://projects.propublica.org/killing-the-colorado/explore-the-river">Explore the Robot River</a></li>
       <li><a href="http://www.nytimes.com/projects/2012/snow-fall/#/?part=to-the-peak">Snowfall (sorry)</a>
     </ul>
-    <h3>Locator Maps</h3>
-    <ul>
+    <h3 class="fw3 f4 b--black-20 lh-title mv2">Locator Maps</h3>
+    <ul class="list mv1">
       <li><a href="http://www.espn.com/espn/feature/story/_/id/9175394/out-great-alone#section-3">Out in the great unknown</a></li>
       <li><a href="http://www.nytimes.com/interactive/2014/12/09/science/space/curiosity-rover-28-months-on-mars.html?action=click&contentCollection=Space%20%26%20Cosmos&region=Footer&module=WhatsNext&version=WhatsNext&contentID=WhatsNext&moduleDetail=undefined&pgtype=Multimedia">28 Months on Mars</a></li>
       <li><a href="http://www.latimes.com/local/lanow/la-me-earthquakesa-earthquake-32-quake-strikes-near-morongo-valley-calif-yawx-story.html">Quake Bot</a></li>
@@ -42,8 +46,8 @@
       <li><a href="https://www.buzzfeed.com/peteraldhous/spies-in-the-skies?utm_term=.ldWrzjJazD#.veBAzZ9mzN">Spies in the Skies</a></li>
     </ul>
 
-    <h2>Installing GIS tools</h2>
-    <p>
+    <h2 class="bb b--black-20 fw3 f3 lh-title mb3">Installing GIS tools</h2>
+    <p class="measure-wide">
       <b>Mac:</b> There best way to install the tools we need is with a command line tool called homebrew. Essentially you open Terminal.app (in the Utilities folder in Applications) and follow the directions on <a href="http://brew.sh/">Homebrew's Website</a>. After you've installed homebrew, I recommend using osgeo's installer, so type this in your terminal:
     </p>
     <pre>
@@ -52,10 +56,10 @@ sudo ln -s /System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/p
 brew cask install qgis
 brew install gdal
     </pre>
-    <p>
+    <p class="measure-wide">
       That will take a really long time to complete, and you may need to run it more than once. Another option is to use the installer on the QGIS website. You first need to install the GDAL Complete package from <a href="http://www.kyngchaos.com/software/frameworks">Kyngchaos</a>
     </p>
-    <p>
+    <p class="measure-wide">
       <b>Windows:</b> I've heard good things about <a href="https://trac.osgeo.org/osgeo4w/">OSGeo4W</a> but I've never used it. You'll also need to install <a href="https://www.python.org/downloads/windows/">python</a>. One other option is to run a linux machine in <a href="https://www.virtualbox.org/wiki/Downloads">virtualbox</a>.
     </p>
   </body>

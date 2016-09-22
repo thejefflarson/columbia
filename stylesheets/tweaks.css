@@ -1,0 +1,31 @@
+a {
+  text-decoration: none;
+  transition: color .15s ease-in;
+  color: #00449E;
+}
+
+a:link,
+a:visited {
+  transition: color .15s ease-in;
+}
+
+a:hover {
+  transition: color .15s ease-in;
+}
+
+a:active {
+  transition: color .15s ease-in;
+}
+
+a:focus {
+  transition: color .15s ease-in;
+  outline: 1px dotted currentColor;
+}
+
+ul {
+    list-style-type:none
+}
+
+li {
+    padding: 0px;
+}
