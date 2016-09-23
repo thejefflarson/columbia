@@ -7,11 +7,16 @@
     <script src="../javascripts/d3.js"></script>
     <script src="../javascripts/topojson.min.js"></script>
     <style>
-      .states {
-        fill: none;
-        stroke: #666;
-        stroke-linejoin: round;
-      }
+     .states, .graticule {
+       fill: none;
+       stroke: #666;
+       stroke-linejoin: round;
+     }
+     .graticule {
+       color: #999;
+       stroke-width: 0.5px;
+       stroke-opacity: 0.5;
+     }
     </style>
   </head>
   <body class="sans-serif center mv4 pa3 ba b--black-20 dark-gray f5 lh-copy w-70-l">
@@ -32,6 +37,7 @@
         <input type="submit" id="rotate" class="mr1 f6 ba dib b--light-blue black-70 pa1 dim link bg-white ttu tracked" value="rotate">
         <input type="submit" id="shear" class="mr1 f6 ba dib b--light-red black-70 pa1 dim link bg-white ttu tracked" value="shear">
         <input type="submit" id="mercator" class="mr1 f6 ba dib b--green black-70 pa1 dim link bg-white ttu tracked" value="mercator">
+        <input type="submit" id="mollweide" class="mr1 f6 ba dib b--green black-70 pa1 dim link bg-white ttu tracked" value="mollweide">
         <input type="submit" id="draw" class="mr1 f6 ba dib b--red black-70 pa1 dim link bg-white ttu tracked" value="draw">
         <input type="submit" id="reset" class="mr1 f6 ba dib b--orange black-70 pa1 dim link bg-white ttu tracked" value="reset">
       </div>
@@ -40,7 +46,7 @@
     <script>
      var value = function(id) {
        var it = document.getElementById(id).value;
-       return new Function('x', 'y', `return ${it};`);
+       return new Function('x', 'y', `with(Math) { return ${it}; };`);
      };
 
      var getProjection = function() {
@@ -66,7 +72,13 @@
      map.style("width", width)
         .style("height", height);
 
+
+     var g = map.append("path")
+                .attr("class", "graticule")
+                .datum(d3.geoGraticule());
+
      var p = map.append("path").attr("class", "states");
+
      var go = function() {
        d3.json("../data/world.topojson", load);
      };
@@ -88,16 +100,18 @@
 
      [
        ['reset', "x", "0", "0", "y"],
-       ["flip", "-1*x", "0",
+       ["flip", "-1 * x", "0",
                 "0", "y"],
-       ["scale", "1.5*x", "0",
-                 "0", "1.5*y"],
-       ["rotate", "Math.cos(Math.PI/4)*x", "Math.sin(Math.PI/4)*y",
-                  "-1*Math.sin(Math.PI/4)*x", "Math.cos(Math.PI/4)*y"],
-       ["shear", "x", "Math.tan(Math.PI/4) * y",
+       ["scale", "1.5 * x", "0",
+                 "0", "1.5 * y"],
+       ["rotate", "cos(PI / 4) * x", "sin(PI / 4) * y",
+                  "-1*sin(PI / 4 ) * x", "cos(PI / 4) * y"],
+       ["shear", "x", "tan(PI / 4) * y",
                  "0", "y"],
        ["mercator", "x", "0",
-                    "0", "Math.log(Math.tan(Math.PI / 4 + y / 2))"]
+                    "0", "log(tan(PI / 4 + y / 2))"],
+       ["mollweide", "2 * sqrt(2) / PI * x * cos(y)", "0",
+                    "0", "sqrt(2) * sin(y)"]
      ].forEach(function(it) {
        document.getElementById(it.shift()).addEventListener("click", function() {
          transform.apply(this, it);
@@ -119,6 +133,7 @@
        p.datum(topojson.mesh(world, world.objects.land))
         .attr("d", path)
         .attr('class', 'states');
+       g.attr("d", path);
      };
 
     </script>
