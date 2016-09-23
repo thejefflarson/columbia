@@ -7,7 +7,7 @@
     <script src="../javascripts/d3.js"></script>
     <script src="../javascripts/topojson.min.js"></script>
     <style>
-     .states, .graticule {
+     .states, .graticule, .sphere {
        fill: none;
        stroke: #666;
        stroke-linejoin: round;
@@ -16,6 +16,10 @@
        color: #999;
        stroke-width: 0.5px;
        stroke-opacity: 0.5;
+     }
+     .sphere {
+       color: #111;
+       stroke-width: 3px;
      }
     </style>
   </head>
@@ -78,6 +82,10 @@
                 .datum(d3.geoGraticule());
 
      var p = map.append("path").attr("class", "states");
+     var s = map.append("path")
+                .datum({type: "Sphere"})
+                .attr("class", "sphere");
+
 
      var go = function() {
        d3.json("../data/world.topojson", load);
@@ -134,6 +142,7 @@
         .attr("d", path)
         .attr('class', 'states');
        g.attr("d", path);
+       s.attr("d", path);
      };
 
     </script>
