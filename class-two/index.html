@@ -4,9 +4,124 @@
     <link rel="stylesheet" href="../stylesheets/reset.css">
     <link rel="stylesheet" href="../stylesheets/tachyons.min.css">
     <link rel="stylesheet" href="../stylesheets/tweaks.css">
+    <script src="../javascripts/d3.js"></script>
+    <script src="../javascripts/topojson.min.js"></script>
+    <style>
+      .states {
+        fill: none;
+        stroke: #666;
+        stroke-linejoin: round;
+      }
+    </style>
   </head>
-  <body class="sans-serif center mv4 pa3 ba b--black-20 dark-gray f5 lh-copy measure-wide">
+  <body class="sans-serif center mv4 pa3 ba b--black-20 dark-gray f5 lh-copy w-70-l">
     <h2 class="bb b--black-20 fw3 f3 lh-title mb3">Projection</h2>
+    <div id="affine">
+      <div>
+        x<sub>p</sub> = <input id="xx" value="x" class="dib pa1 w-40"> +
+                        <input id="xy" value ="0" class="dib pa1 w-40">
+
+      </div>
+      <div class="mb1">
+        y<sub>p</sub> = <input id="yx" value="0" class="dib pa1 w-40"> +
+                        <input id="yy" value ="y" class="dib pa1 w-40">
+      </div>
+      <div>
+        <input type="submit" id="flip" class="mr1 f6 ba dib b--blue black-70 pa1 dim link bg-white ttu tracked" value="flip">
+        <input type="submit" id="scale" class="mr1 f6 ba dib b--pink black-70 pa1 dim link bg-white ttu tracked" value="scale">
+        <input type="submit" id="rotate" class="mr1 f6 ba dib b--light-blue black-70 pa1 dim link bg-white ttu tracked" value="rotate">
+        <input type="submit" id="shear" class="mr1 f6 ba dib b--light-red black-70 pa1 dim link bg-white ttu tracked" value="shear">
+        <input type="submit" id="mercator" class="mr1 f6 ba dib b--green black-70 pa1 dim link bg-white ttu tracked" value="mercator">
+        <input type="submit" id="draw" class="mr1 f6 ba dib b--red black-70 pa1 dim link bg-white ttu tracked" value="draw">
+        <input type="submit" id="reset" class="mr1 f6 ba dib b--orange black-70 pa1 dim link bg-white ttu tracked" value="reset">
+      </div>
+    </div>
+    <svg id="map" class="mv4 w-100"></svg>
+    <script>
+     var value = function(id) {
+       var it = document.getElementById(id).value;
+       return new Function('x', 'y', `return ${it};`);
+     };
+
+     var getProjection = function() {
+       return (function() {
+         var xx = value("xx"),
+             xy = value("xy"),
+             yx = value("yx"),
+             yy = value("yy");
+         return function(x, y) {
+           return [
+             xx(x, y) + xy(x, y),
+             yx(x, y) + yy(x, y)
+           ];
+         };
+       })();
+     };
+
+     var map = d3.select("#map");
+
+     var width = map.node().getBoundingClientRect().width,
+         height = width * 9 / 16.0;
+
+     map.style("width", width)
+        .style("height", height);
+
+     var p = map.append("path").attr("class", "states");
+     var go = function() {
+       d3.json("../data/world.topojson", load);
+     };
+
+     document.getElementById("draw").addEventListener("click", go, false);
+
+     go();
+
+     var fill = function(id, v) {
+       document.getElementById(id).setAttribute("value", v);
+     };
+
+     var transform = function(xx, xy, yx, yy) {
+       fill("xx", xx);
+       fill("xy", xy);
+       fill("yx", yx);
+       fill("yy", yy);
+     };
+
+     [
+       ['reset', "x", "0", "0", "y"],
+       ["flip", "-1*x", "0",
+                "0", "y"],
+       ["scale", "1.5*x", "0",
+                 "0", "1.5*y"],
+       ["rotate", "Math.cos(Math.PI/4)*x", "Math.sin(Math.PI/4)*y",
+                  "-1*Math.sin(Math.PI/4)*x", "Math.cos(Math.PI/4)*y"],
+       ["shear", "x", "Math.tan(Math.PI/4) * y",
+                 "0", "y"],
+       ["mercator", "x", "0",
+                    "0", "Math.log(Math.tan(Math.PI / 4 + y / 2))"]
+     ].forEach(function(it) {
+       document.getElementById(it.shift()).addEventListener("click", function() {
+         transform.apply(this, it);
+         go();
+       });
+     });
+
+
+     function load(e, world) {
+       if(e) throw e;
+
+       var projection = d3.geoProjection(getProjection())
+                          .scale(110)
+                          .translate([width / 2, height / 2]);
+
+       var path = d3.geoPath()
+                    .projection(projection);
+
+       p.datum(topojson.mesh(world, world.objects.land))
+        .attr("d", path)
+        .attr('class', 'states');
+     };
+
+    </script>
     <h2 class="bb b--black-20 fw3 f3 lh-title mv3">Standard Vector Data</h2>
     <p><a href="geometry-specification.pdf">Technical Documentation</a></p>
     <img src="geometry-heirarchy.png">

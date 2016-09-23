@@ -1,7 +1,7 @@
 a {
   text-decoration: none;
   transition: color .15s ease-in;
-  color: #00449E;
+  color: #0074D9;
 }
 
 a:link,
@@ -20,12 +20,4 @@ a:active {
 a:focus {
   transition: color .15s ease-in;
   outline: 1px dotted currentColor;
-}
-
-ul {
-    list-style-type:none
-}
-
-li {
-    padding: 0px;
 }
