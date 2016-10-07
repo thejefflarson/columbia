@@ -1,0 +1,190 @@
+<html>
+  <head>
+    <title>Class Three | Intro to GIS</title>
+    <link rel="stylesheet" href="../stylesheets/reset.css">
+    <link rel="stylesheet" href="../stylesheets/tachyons.min.css">
+    <link rel="stylesheet" href="../stylesheets/tweaks.css">
+    <script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+  </head>
+  <body class="sans-serif pv4 pl6 fw1 lh-copy w-70 bg-dark-gray white">
+    <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Last Week's Homework</h2>
+    <p class="pv2">Send me an <a href="mailto:jal2301@columbia.edu" class="link dim yellow">
+      email
+    </a> containing:
+      <ol class="measure-wide pl2">
+        <li>1. The list of foreclosures if you found them, if not an email you
+          sent and subsequent correspondence, if any, asking about them.
+        </li>
+        <li>2. An image of your chloropleth race breakdown.</li>
+        <li>3. Your dots function in python.</li>
+      </ol>
+    </p>
+    <p class="pv2">If Shapely and or Fiona are giving you issues reinstall them with:</p>
+    <pre class="code pa2 bg-mid-gray">
+pip uninstall fiona shapely && pip install --no-use-wheel shapely fiona</pre>
+    <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Clipping Polygons</h2>
+    <p class="pv2">
+      A few of you have asked me how to do this, and these are the simplest ways
+      to cut features to a boundary polygon. First with ogr:
+    </p>
+    <pre class="code pa2 bg-mid-gray">
+ogr2ogr clipped.shp source.shp -clipsrc boundary.shp</pre>
+    <p class="pv2">
+      And in Fiona and Shapely:
+    </p>
+    <pre class="code pa2 bg-mid-gray">
+import fiona
+import sys
+from shapely.geometry import shape, mapping
+from shapely.ops import cascaded_union
+
+with fiona.drivers():
+    with fiona.open(sys.argv[1]) as source:
+        with fiona.open(sys.argv[2]) as clip:
+            dest = fiona.open(sys.argv[3], 'w',
+                              driver=source.driver,
+                              crs=source.crs,
+                              schema=source.schema)
+            # convert clip into a list of shapely shapes
+            clippers = [shape(s['geometry']) for s in clip]
+            for feature in source:
+                clipped = []
+                geometry = shape(feature['geometry'])
+                for clipper in clippers:
+                    if clipper.intersects(geometry):
+                        clipped.append(clipper.intersection(geometry))
+
+                if clipped:
+                    unioned = cascaded_union(clipped)
+                    # Sometimes an intersection can return a point
+                    # or a linestring
+                    if unioned.type == geometry.type:
+                        dest.write({
+                            'geometry': mapping(unioned),
+                            'properties': feature['properties']
+                        })
+            dest.close()
+    </pre>
+    <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Working with associated data in Fiona</h2>
+    <p class="pv2">
+      This week we're going to try and find a story, first we're going to use a
+      simple index called the dissimilarity index to measure segregation in
+      Brooklyn.
+    </p>
+    $$dissimilarity = \frac{1}{2}\sum_{i=1}^{N} \left | \frac{b_i}{B_i} - \frac{w_i}{W_i} \right |$$
+    <p class="pv2">
+      Essentially, it is the percentage of people who would have to move out of
+      the tract they live so that all tracts have the same racial breakdown as
+      Brooklyn as a whole. Here's one way to do it on a shapefile with
+      demographics:
+    </p>
+    <pre class="code pa2 bg-mid-gray">
+import fiona
+
+
+with fiona.drivers():
+    with fiona.open('brooklyn-demos.shp') as source:
+        props = [s['properties'] for s in source]
+
+# filter out missing data
+props = list(filter(lambda x: x.get('black') and x.get('white') and x.get('total_nonh') > 0, props))
+
+# Calculate totals
+total = {'black': 0.0, 'white': 0.0, 'total': 0.0}
+for prop in props:
+    total['black'] += prop['black']
+    total['white'] += prop['white']
+    total['total'] += prop['total_nonh']
+
+index = 0.0
+for prop in props:
+    index += abs(prop['black'] / total['black'] - prop['white'] / total['white'])
+
+print(0.5 * index * 100)
+    </pre>
+    <p class="pv2">
+      So, Brooklyn is pretty segregated between blacks and whites.
+    </p>
+    <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">A possible story</h2>
+    <p class="pv2">
+      Last week, someone asked if foreclosure data was in the census,
+      unfortunately it isn't. However, there are numbers on housing
+      characteristics. Let's see if there's a visual correlation between
+      African American tracts and vacant housing. To do that, we're going to
+      create a simple
+      <a href="http://andywoodruff.com/blog/value-by-alpha-maps/" class="link dim yellow">
+        Value by Alpha Map</a>.
+    </p>
+    <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Testing our Hypothesis With a Regression</h2>
+    <p class="pv2">
+      Generally when we have a hypothesis, it's our job to try and prove
+      ourselves wrong. The best way to do that is to see if we can explain
+      away a perceived effect by controlling for other variables, and
+      for that we turn to a regression. We'll use
+      <a href="http://statsmodels.sourceforge.net/devel/regression.html" class="link dim yellow">StatsModels</a>,
+      <a href="http://pandas.pydata.org/" class="link dim yellow">Pandas</a>,
+      and <a href="http://matplotlib.org/" class="link dim yellow">matplotlib</a>.
+    </p>
+    <pre class="code pa2 bg-mid-gray">
+import fiona
+import pandas as pd
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+
+
+with fiona.drivers():
+    with fiona.open('brooklyn-demos.shp') as source:
+        props = [s['properties'] for s in source]
+
+
+# filter out missing data
+df = pd.DataFrame.from_records(props)
+
+features = df[['percent_va', 'p_black', 'median_inc']].dropna()
+
+plt.scatter(features['p_black'], features['percent_va'],)
+plt.savefig('out.png')
+
+print(features.describe())
+
+model = sm.OLS(features['percent_va'], features[['p_black']])
+print(model.fit().summary())
+
+model = sm.OLS(features['percent_va'], features[['p_black', 'median_inc']]).fit()
+print(model.summary())
+
+fig = plt.figure(figsize=(12,8))
+fig = sm.graphics.plot_regress_exog(model, "p_black", fig=fig)
+fig.savefig('p_black.png')
+
+model = sm.OLS(features['percent_va'], features[['median_inc']])
+print(model.fit().summary())
+    </pre>
+    <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Homework</h2>
+    <p class="pv2">
+      The homework this week has two parts:
+      <ol>
+        <li>
+          1. Calculate the <a href="http://www.usatoday.com/story/news/nation/2014/10/21/diversity-index-data-how-we-did-report/17432103/" class="link dim yellow">USA Today diversity index</a>
+          for your county. If you're county is has too few tracts,
+          try your state. You don't need a joined shapefile for this
+          you can do it just with ACS data. You'll need to email me your code.
+        </li>
+        <li>
+          2. Turn one of the datasets on the bottom <a href="http://www1.nyc.gov/site/finance/taxes/property-lien-sales.page" class="link dim yellow">here</a>
+          into a shapefile of points using Shapely, Fiona, and Mapzen's <a href="https://mapzen.com/documentation/search/" class="link dim yellow">Geocoding api</a>.
+          If you were able to get address data for foreclosures last week,
+          you should use your data instead.
+          In order to get the data out cleanly you'll want to try <a href="http://tabula.technology/" class="link dim yellow">Tabula</a>.
+          Tip: You'll want to have a look at <a href="http://docs.python-requests.org/en/master/" class="link dim yellow">Requests</a> to make the HTTP requests.
+        </li>
+        <li>
+          3. Use either <a href="http://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html" class="link dim yellow">KNN</a> or
+          <a href="http://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html" class="link dim yellow">KMeans</a> from <a href="http://scikit-learn.org/" class="link dim yellow">Scikit learn</a> to cluster the geocoded addresses and write them to a shapefile then open that in QGIS and send me a screenshot of your clusters.
+      </ol>
+      <p class="pv2">
+        Next week! Putting this on the web I promise!
+      </p>
+    </p>
+  </body>
+</html>
