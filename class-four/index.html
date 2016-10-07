@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="../stylesheets/tweaks.css">
     <script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
   </head>
-  <body class="sans-serif pv4 pl6 fw1 lh-copy w-70 bg-dark-gray white">
+  <body class="sans-serif pv4 pl6 fw1 lh-copy w-100 w-70-l bg-dark-gray white">
     <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Last Week's Homework</h2>
     <p class="pv2">Send me an <a href="mailto:jal2301@columbia.edu" class="link dim yellow">
       email
@@ -23,13 +23,13 @@
     <pre class="code pa2 bg-mid-gray">
 pip uninstall fiona shapely && pip install --no-use-wheel shapely fiona</pre>
     <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Clipping Polygons</h2>
-    <p class="pv2">
+    <p class="pv2 measure-wide">
       A few of you have asked me how to do this, and these are the simplest ways
       to cut features to a boundary polygon. First with ogr:
     </p>
     <pre class="code pa2 bg-mid-gray">
 ogr2ogr clipped.shp source.shp -clipsrc boundary.shp</pre>
-    <p class="pv2">
+    <p class="pv2 measure-wide">
       And in Fiona and Shapely:
     </p>
     <pre class="code pa2 bg-mid-gray">
@@ -66,15 +66,15 @@ with fiona.drivers():
             dest.close()
     </pre>
     <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Working with associated data in Fiona</h2>
-    <p class="pv2">
+    <p class="pv2 measure-wide">
       This week we're going to try and find a story, first we're going to use a
       simple index called the dissimilarity index to measure segregation in
       Brooklyn.
     </p>
     $$dissimilarity = \frac{1}{2}\sum_{i=1}^{N} \left | \frac{b_i}{B_i} - \frac{w_i}{W_i} \right |$$
-    <p class="pv2">
+    <p class="pv2 measure-wide">
       Essentially, it is the percentage of people who would have to move out of
-      the tract they live so that all tracts have the same racial breakdown as
+      the tract they live in so that all tracts have the same racial breakdown as
       Brooklyn as a whole. Here's one way to do it on a shapefile with
       demographics:
     </p>
@@ -102,11 +102,11 @@ for prop in props:
 
 print(0.5 * index * 100)
     </pre>
-    <p class="pv2">
+    <p class="pv2 measure-wide">
       So, Brooklyn is pretty segregated between blacks and whites.
     </p>
     <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">A possible story</h2>
-    <p class="pv2">
+    <p class="pv2 measure-wide">
       Last week, someone asked if foreclosure data was in the census,
       unfortunately it isn't. However, there are numbers on housing
       characteristics. Let's see if there's a visual correlation between
@@ -116,7 +116,7 @@ print(0.5 * index * 100)
         Value by Alpha Map</a>.
     </p>
     <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Testing our Hypothesis With a Regression</h2>
-    <p class="pv2">
+    <p class="pv2 measure-wide">
       Generally when we have a hypothesis, it's our job to try and prove
       ourselves wrong. The best way to do that is to see if we can explain
       away a perceived effect by controlling for other variables, and
@@ -161,16 +161,16 @@ model = sm.OLS(features['percent_va'], features[['median_inc']])
 print(model.fit().summary())
     </pre>
     <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Homework</h2>
-    <p class="pv2">
+    <p class="pv2 measure-wide">
       The homework this week has two parts:
       <ol>
-        <li>
+        <li class="measure-wide">
           1. Calculate the <a href="http://www.usatoday.com/story/news/nation/2014/10/21/diversity-index-data-how-we-did-report/17432103/" class="link dim yellow">USA Today diversity index</a>
           for your county. If you're county is has too few tracts,
           try your state. You don't need a joined shapefile for this
           you can do it just with ACS data. You'll need to email me your code.
         </li>
-        <li>
+        <li class="measure-wide">
           2. Turn one of the datasets on the bottom <a href="http://www1.nyc.gov/site/finance/taxes/property-lien-sales.page" class="link dim yellow">here</a>
           into a shapefile of points using Shapely, Fiona, and Mapzen's <a href="https://mapzen.com/documentation/search/" class="link dim yellow">Geocoding api</a>.
           If you were able to get address data for foreclosures last week,
@@ -178,12 +178,12 @@ print(model.fit().summary())
           In order to get the data out cleanly you'll want to try <a href="http://tabula.technology/" class="link dim yellow">Tabula</a>.
           Tip: You'll want to have a look at <a href="http://docs.python-requests.org/en/master/" class="link dim yellow">Requests</a> to make the HTTP requests.
         </li>
-        <li>
+        <li class="measure-wide">
           3. Use either <a href="http://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html" class="link dim yellow">KNN</a> or
           <a href="http://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html" class="link dim yellow">KMeans</a> from <a href="http://scikit-learn.org/" class="link dim yellow">Scikit learn</a> to cluster the geocoded addresses and write them to a shapefile then open that in QGIS and send me a screenshot of your clusters.
       </ol>
-      <p class="pv2">
-        Next week! Putting this on the web I promise!
+      <p class="pv2 measure-wide">
+        Next week! Putting making things for the web I promise!
       </p>
     </p>
   </body>
