@@ -1,27 +1,37 @@
 <html>
   <head>
     <title>Class Five | Columbia GIS</title>
+    <link rel="stylesheet" href="../stylesheets/reset.css">
+    <link rel="stylesheet" href="../stylesheets/tachyons.min.css">
+    <link rel="stylesheet" href="../stylesheets/tweaks.css">
     <script src="../javascripts/d3.js"></script>
     <script src="../javascripts/topojson.min.js"></script>
   </head>
-  <body>
-    <h2>Policy Note</h2>
-    <p>
-      From here on out homework is due whenever you can finish it.
-      I've updated the syllabus to reflect where I think you guys
-      want to go, the biggest change is I've dropped PostGIS.
-      Please send me an email or on slack if you have comments.
-    </p>
-    <p>
-      Also no homework this week to allow everyone to catch up on
-      the most recent assignments. I'll send each of you an email
-      on where you are homework-wise.
-    </p>
-    <h2>Fundamentals of SVG / Canvas</h2>
-    <div>
-    <div>
-      <canvas id="canvas-demo"></canvas>
-      <pre>
+  <body class="w-100 sans-serif pa5 fw2 f3 lh-copy">
+    <section class="measure-wide">
+      <h2 class="fw2 f1 pb2">Policy Note</h2>
+      <p class="pb2 pb2">
+        From here on out homework is due whenever you can finish it.
+      </p>
+      <p class="pb2">
+        No homework this week to allow everyone to catch up on
+        the most recent assignments. I'll send each of you an email
+        on where you are homework-wise.
+      </p>
+      <h2 class="fw2 f1 pb2">Fundamentals of SVG / Canvas</h2>
+      <p class="pb2">
+        There are two ways to draw in html and JavaScript. Canvas and SVG,
+        SVG is focused on vector graphics, and canvas gives you access to
+        the raw pixels that make up an image. A major downside of canvas is you
+        don't get access to niceties like hovers and interactivity, but canvas
+        is also the only way you can use WebGL for 3D interactives.
+      </p>
+    </section>
+    <div class="f5 code fw3 w-100 cf">
+      <div class="fl w-50 pr2 pv2">
+        <div class="pa3 ba b--black-40">
+          <canvas id="canvas-demo"></canvas>
+          <pre>
 var canvas = document.getElementById("canvas-demo");
 canvas.width = 400;
 canvas.height = 400;
@@ -31,13 +41,15 @@ var loop = function() {
   requestAnimationFrame(function() {
     var time = (new Date()).getTime() / 1000;
     var coords = [[-50, -50], [-50, 50], [50, 50], [50, -50]];
+    ctx.save();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.translate(200, 200);
     ctx.beginPath();
     coords.forEach(function(pt, i) {
       var x = Math.cos(time) * pt[0] +
-              Math.sin(time) * pt[1] + 200;
+              Math.sin(time) * pt[1];
       var y = -1 * Math.sin(time) * pt[0] +
-              Math.cos(time) * pt[1] + 200;
+              Math.cos(time) * pt[1];
       if(i === 0) {
         ctx.moveTo(x, y);
       } else {
@@ -48,89 +60,123 @@ var loop = function() {
     ctx.strokeStyle = "#666";
     ctx.lineWidth = 5;
     ctx.stroke();
+    ctx.restore();
     loop();
   });
 };
 
 loop();</pre>
-    <script>
-     (function(){
-       var canvas = document.getElementById("canvas-demo");
-       canvas.width = 400;
-       canvas.height = 400;
-       var ctx = canvas.getContext("2d");
+          <script>
+           (function(){
+             var canvas = document.getElementById("canvas-demo");
+             canvas.width = 400;
+             canvas.height = 400;
+             var ctx = canvas.getContext("2d");
 
-       var loop = function() {
-         requestAnimationFrame(function() {
-           var time = (new Date()).getTime() / 1000;
-           var coords = [[-50, -50], [-50, 50], [50, 50], [50, -50]];
-           ctx.clearRect(0, 0, canvas.width, canvas.height);
-           ctx.beginPath();
-           coords.forEach(function(pt, i) {
-             var x = Math.cos(time) * pt[0] +
-                     Math.sin(time) * pt[1] + 200;
-             var y = -1 * Math.sin(time) * pt[0] +
-                     Math.cos(time) * pt[1] + 200;
-             if(i === 0) {
-               ctx.moveTo(x, y);
-             } else {
-               ctx.lineTo(x, y);
+             var loop = function() {
+               requestAnimationFrame(function() {
+                 var time = (new Date()).getTime() / 1000;
+                 var coords = [[-50, -50], [-50, 50], [50, 50], [50, -50]];
+
+                 ctx.save()
+                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                 ctx.translate(200, 200);
+                 ctx.beginPath();
+                 coords.forEach(function(pt, i) {
+                   var x = Math.cos(time) * pt[0] +
+                           Math.sin(time) * pt[1] ;
+                   var y = -1 * Math.sin(time) * pt[0] +
+                           Math.cos(time) * pt[1];
+                   if(i === 0) {
+                     ctx.moveTo(x, y);
+                   } else {
+                     ctx.lineTo(x, y);
+                   }
+                 });
+                 ctx.closePath();
+                 ctx.strokeStyle = "#666";
+                 ctx.lineWidth = 5;
+                 ctx.stroke();
+                 ctx.restore();
+                 loop();
+               });
+             };
+             loop();
+           })();
+          </script>
+        </div>
+      </div>
+      <div class="fl w-50 pa2">
+        <div class="pa3 ba b--black-40">
+          <svg id="svg-demo" xmlns="http://www.w3.org/2000/svg"></svg>
+          <pre>
+&lt;style&gt;
+.spinning {
+   fill: #666;
+   animation: spin 4s linear infinite;
+   transform-origin: 50% 50%;
+ }
+ @keyframes spin {
+   100% {
+     transform: rotate(360deg);
+   }
+ }
+&lt;/style&gt;
+&lt;script&gt;
+  var svg = document.getElementById("svg-demo");
+  svg.setAttribute('width', 400);
+  svg.setAttribute('height', 400);
+  var rect = document.createElementNS('http://www.w3.org/2000/svg',
+                                      'rect');
+  rect.setAttribute('x', 150);
+  rect.setAttribute('y', 150);
+  rect.setAttribute('width', 100);
+  rect.setAttribute('height', 100);
+  rect.setAttribute('class', 'spinning');
+  svg.appendChild(rect);
+&lt;/script&gt;</pre>
+          <style>
+           .spinning {
+             fill: #666;
+             animation: spin 4s linear infinite;
+             transform-origin: 50% 50%;
+           }
+           @keyframes spin {
+             100% {
+               transform: rotate(360deg);
              }
-           });
-           ctx.closePath();
-           ctx.strokeStyle = "#666";
-           ctx.lineWidth = 5;
-           ctx.stroke();
-           loop();
-         });
-       };
-       loop();
-     })();
-    </script>
-    <div>
-    <svg id="svg-demo" xmlns="http://www.w3.org/2000/svg"></svg>
-    <style>
-     #svg-demo {
-
-     }
-     .spinning {
-       fill: #666;
-       animation: spin 4s linear infinite;
-       transform-origin: 50% 50%;
-     }
-     @keyframes spin {
-       100% {
-         transform: rotate(360deg);
-       }
-     }
-    </style>
-    <script>
-     (function(){
-       var svg = document.getElementById("svg-demo");
-       svg.setAttribute('width', 400);
-       svg.setAttribute('height', 400);
-       var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-       rect.setAttribute('x', 150);
-       rect.setAttribute('y', 150);
-       rect.setAttribute('width', 100);
-       rect.setAttribute('height', 100);
-       rect.setAttribute('class', 'spinning');
-       svg.appendChild(rect);
-      })();
-    </script>
+           }
+          </style>
+          <script>
+           (function(){
+             var svg = document.getElementById("svg-demo");
+             svg.setAttribute('width', 400);
+             svg.setAttribute('height', 400);
+             var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+             rect.setAttribute('x', 150);
+             rect.setAttribute('y', 150);
+             rect.setAttribute('width', 100);
+             rect.setAttribute('height', 100);
+             rect.setAttribute('class', 'spinning');
+             svg.appendChild(rect);
+           })();
+          </script>
+        </div>
+      </div>
     </div>
-    </div>
-    <h2>Translating Shapefiles to GeoJSON</h2>
-    <p>
-      The defacto standard for working with geodata on the web is GeoJSON.
-      It's easy to translate a shapefile to json using ogr2ogr.
-    </p>
-    <pre>
+    <section class="measure-wide">
+      <h2 class="fw2 f1 pb2">Translating Shapefiles to GeoJSON</h2>
+      <p>
+        The defacto standard for working with geodata on the web is GeoJSON.
+        It's easy to translate a shapefile to json using ogr2ogr.
+      </p>
+      <pre class="f4 code fw3 pa3">
 ogr2ogr out.json src.shp -f GeoJSON -simplify 10.0 -t_srs EPSG:3857</pre>
-    <p>
-      Which is essentially the same thing as the following in python:
-    </p>
-    <pre>
+      <p>
+        Which is essentially the same thing as the following in python:
+      </p>
+    </section>
+    <pre class="f5 code fw3 pa3 ba b--black-40 mv2">
 import fiona
 import sys
 import pyproj
@@ -158,24 +204,97 @@ with fiona.drivers():
                     'properties': s['properties']
                 })
     </pre>
-    <p>
-      We'll need npm and node to install topojson. On OS X you can run:
-    </p>
-    <pre>
+    <section class="measure-wide">
+      <p>
+        We'll need npm and node to install topojson. On OS X you can run:
+      </p>
+      <pre class="f4 code fw3 pa2">
 brew install node</pre>
-    <p>
-      On windows you can download the packages from the
-      <a href="https://nodejs.org/en/download/">Nodejs</a> website.
-    </p>
-    <p>
-      Once you have node installed you can run topojson:
-    <pre>
+      <p>
+        On windows you can download the packages from the
+        <a href="https://nodejs.org/en/download/">Nodejs</a> website.
+      </p>
+      <p>
+        Once you have node installed you can run topojson:
+      </p>
+      <pre class="f4 code fw3 pa2">
 npm install -g topojson
 topojson source.shp -o out.topojson
-    </pre>
-    <h2>Using JavaScript to make a Map</h2>
-    <div id="canvas-map" class="run">
-    </div>
+      </pre>
+      <h2 class="fw2 f1 pb2">Using JavaScript to make a Map</h2>
+      <p>
+        First off let's do things the hard way using the html canvas API. Like all
+        thing's web Mozilla has a <a href="https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial">great tutorial</a> on how to use it.
+      </p>
+    </section>
+    <div id="canvas-map" class="pv2"></div>
+    <pre class="f5 code fw3 pa3 ba b--black-40 mv2">
+var el = document.getElementById("canvas-map");
+var canvas = document.createElement("canvas");
+el.appendChild(canvas);
+canvas.width = 500;
+canvas.height = 500;
+var ctx = canvas.getContext("2d");
+// We're using fetch here which isn't wildly supported natively
+// but there's a polyfill here: https://github.com/github/fetch
+fetch("./brooklyn-demos.json")
+  .then(function(response) {
+    if (response.status >= 200 && response.status < 300) {
+      return response.json();
+    } else {
+      throw new Error("Couldn't load json.");
+    }
+  })
+  .then(draw)
+  .catch(function(error) {
+    console.log(error);
+  });
+
+function draw(json) {
+  var bounds = [Infinity, Infinity, -Infinity, -Infinity];
+  json.features.forEach(function(feature){
+    if(feature.geometry.type != "Polygon")
+      throw new Error("I can only handle Polygon's.");
+    feature.geometry.coordinates.forEach(function(ring) {
+      ring.forEach(function(point) {
+        bounds[0] = Math.min(point[0], bounds[0]);
+        bounds[1] = Math.min(point[1], bounds[1]);
+        bounds[2] = Math.max(point[0], bounds[2]);
+        bounds[3] = Math.max(point[1], bounds[3]);
+      });
+    });
+  });
+
+  var project = function(pt) {
+    var lng = pt[0];
+    var lat = pt[1];
+
+    var scale = canvas.width / (bounds[3] - bounds[1]);
+    var x = (lng - bounds[0]) * scale;
+    var y = (lat - bounds[1]) * scale * -1 + canvas.height;
+
+    return [x, y];
+  };
+
+  json.features.forEach(function(feature){
+    ctx.save();
+    ctx.beginPath();
+    feature.geometry.coordinates.forEach(function(ring) {
+      ring.forEach(function(pt, idx){
+        pt = project(pt);
+        if(idx == 0) ctx.moveTo(pt[0], pt[1]);
+        ctx.lineTo(pt[0], pt[1]);
+      });
+    });
+    ctx.closePath();
+    ctx.fillStyle = "rgba(64, 135, 70," + (feature.properties.p_black / 100.0) + ")";
+    ctx.strokeStyle = "#666";
+    ctx.lineWidth = 0.5;
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  });
+};</pre>
     <script>
      var el = document.getElementById("canvas-map");
      var canvas = document.createElement("canvas");
@@ -244,17 +363,58 @@ topojson source.shp -o out.topojson
        });
      };
     </script>
-    <h2>Using d3 to make a Map</h2>
-    <p>
-      Mike Bostock has a great tutorial on using d3 for
-      <a href="https://bost.ocks.org/mike/map/">mapping</a>, it's
-      written in an old version of d3, but only the names of the
-      functions have changed. For example d3.geo.transverseMercator
-      is now d3.geoTransversemercator.
-    </p>
-    <svg id="d3">
-    </svg>
+    <section class="measure-wide">
+      <h2 class="fw2 f1 pb2">Using d3 to make a Map</h2>
+      <p>
+        Mike Bostock has a great tutorial on using d3 for
+        <a href="https://bost.ocks.org/mike/map/">mapping</a>, it's
+        written in an old version of d3, but only the names of the
+        functions have changed. For example d3.geo.transverseMercator
+        is now d3.geoTransversemercator.
+      </p>
+    </section>
+    <svg id="d3" class="pv2"></svg>
+    <pre class="f5 code fw3 pa3 ba b--black-40 mv2">
+&lt;style&gt;
+ .border {
+   fill: none;
+   stroke: #666;
+   stroke-linejoin: round;
+ }
+&lt;/style&gt;
+&lt;script&gt;
+ d3.json("./brooklyn-demos.topojson", function(error, data) {
+   if(error) throw error;
 
+   var d3map = d3.select("#d3");
+   d3map.style("width", 400)
+        .style("height", 400);
+
+   var group = d3map.append("g")
+                    .attr("id", "blocks");
+   var tracts = topojson.feature(data, data.objects["brooklyn-demos"]);
+   var projection = d3.geoMercator()
+                      .fitExtent([[0, 0], [400, 400]],
+                                 tracts);
+
+   var path = d3.geoPath()
+                .projection(projection);
+   // polygons
+   group.selectAll("path")
+        .data(tracts.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .attr("fill", function(it) {
+          return "rgba(64, 135, 70, " + (it.properties.p_black / 100.0) + ")";
+        });
+   group.append("path")
+        .datum(topojson.mesh(data, data.objects["brooklyn-demos"]))
+        .attr("d", path)
+        .attr("class", 'border');
+ });
+&lt;/script&gt;
+    </pre>
     <style>
      .border {
        fill: none;
@@ -287,15 +447,58 @@ topojson source.shp -o out.topojson
             .attr("d", path)
             .attr("fill", function(it) {
               return "rgba(64, 135, 70, " + (it.properties.p_black / 100.0) + ")";
-             });
+            });
        group.append("path")
             .datum(topojson.mesh(data, data.objects["brooklyn-demos"]))
             .attr("d", path)
             .attr("class", 'border');
      });
     </script>
-    <h2>Projections in d3</h2>
-    <svg id="projections"></svg>
+    <section class="measure-wide">
+      <h2 class="fw2 f1 pb2">Projections in d3</h2>
+      <p>
+        Projections in d3 are mostly math primitives, so it's hard to project to
+        custom projections like state planes. To do so in vanilla d3, you can use
+        this <a href="http://www.ngs.noaa.gov/PUBS_LIB/ManualNOSNGS5.pdf">manual</a>,
+        and Mike Bostock's <a href="http://www.ngs.noaa.gov/PUBS_LIB/ManualNOSNGS5.pdf">example code.</a>
+      </p>
+      <p>
+        Next week, we'll cover how to use <a href="http://spatialreference.org/">
+        spatialreference.org</a> and <a href="http://proj4js.org/">proj4</a> to
+        reproject geojson using d3 into official projections.
+      </p>
+    </section>
+    <svg id="projections" class="pa2"></svg>
+    <pre class="f5 code fw3 pa3 ba b--black-40 mv2">
+d3.json("../data/world.topojson", function(e, world) {
+  if(e) throw e;
+  var map = d3.select("#projections");
+  map.attr('width', 400)
+     .attr('height', 400);
+  var p = map.append("path").attr("class", "border");
+  var world = topojson.mesh(world, world.objects.land);
+  setInterval(function() {
+    var proj = [
+      d3.geoAlbers,
+      d3.geoMercator,
+      d3.geoGnomonic,
+      d3.geoOrthographic,
+      d3.geoTransverseMercator
+    ][Math.random() * 5 | 0];
+
+
+    var projection = proj()
+                       .fitExtent([[0,0], [400,[400]]], world);
+
+    var path = d3.geoPath()
+                 .projection(projection);
+
+    p.datum(world)
+     .attr("d", path)
+     .attr("class", "border");
+  }, 1000);
+});</pre>
+
     <script>
      d3.json("../data/world.topojson", function(e, world) {
        if(e) throw e;
@@ -315,7 +518,7 @@ topojson source.shp -o out.topojson
 
 
          var projection = proj()
-                            .fitExtent([[0,0], [400,[400]]], world);
+           .fitExtent([[0,0], [400,[400]]], world);
 
          var path = d3.geoPath()
                       .projection(projection);
@@ -326,16 +529,5 @@ topojson source.shp -o out.topojson
        }, 1000);
      });
     </script>
-    <!-- finish to here tomorrow -->
-    <h2>Using Proj4 to project points with d3</h2>
-    <div class="run">
-      <pre>
-      </pre>
-    </div>
-    <h2>Implementing Hovers</h2>
-    <div class="run">
-      <pre>
-      </pre>
-    </div>
   </body>
 </html>
