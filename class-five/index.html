@@ -1,6 +1,8 @@
 <html>
   <head>
     <title>Class Five | Columbia GIS</title>
+    <script src="../javascripts/d3.js"></script>
+    <script src="../javascripts/topojson.min.js"></script>
   </head>
   <body>
     <h2>Policy Note</h2>
@@ -16,14 +18,112 @@
       on where you are homework-wise.
     </p>
     <h2>Fundamentals of SVG / Canvas</h2>
-    <div class="run">
+    <div>
+    <div>
+      <canvas id="canvas-demo"></canvas>
       <pre>
-      </pre>
+var canvas = document.getElementById("canvas-demo");
+canvas.width = 400;
+canvas.height = 400;
+var ctx = canvas.getContext("2d");
+
+var loop = function() {
+  requestAnimationFrame(function() {
+    var time = (new Date()).getTime() / 1000;
+    var coords = [[-50, -50], [-50, 50], [50, 50], [50, -50]];
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    coords.forEach(function(pt, i) {
+      var x = Math.cos(time) * pt[0] +
+              Math.sin(time) * pt[1] + 200;
+      var y = -1 * Math.sin(time) * pt[0] +
+              Math.cos(time) * pt[1] + 200;
+      if(i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    });
+    ctx.closePath();
+    ctx.strokeStyle = "#666";
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    loop();
+  });
+};
+
+loop();</pre>
+    <script>
+     (function(){
+       var canvas = document.getElementById("canvas-demo");
+       canvas.width = 400;
+       canvas.height = 400;
+       var ctx = canvas.getContext("2d");
+
+       var loop = function() {
+         requestAnimationFrame(function() {
+           var time = (new Date()).getTime() / 1000;
+           var coords = [[-50, -50], [-50, 50], [50, 50], [50, -50]];
+           ctx.clearRect(0, 0, canvas.width, canvas.height);
+           ctx.beginPath();
+           coords.forEach(function(pt, i) {
+             var x = Math.cos(time) * pt[0] +
+                     Math.sin(time) * pt[1] + 200;
+             var y = -1 * Math.sin(time) * pt[0] +
+                     Math.cos(time) * pt[1] + 200;
+             if(i === 0) {
+               ctx.moveTo(x, y);
+             } else {
+               ctx.lineTo(x, y);
+             }
+           });
+           ctx.closePath();
+           ctx.strokeStyle = "#666";
+           ctx.lineWidth = 5;
+           ctx.stroke();
+           loop();
+         });
+       };
+       loop();
+     })();
+    </script>
+    <div>
+    <svg id="svg-demo" xmlns="http://www.w3.org/2000/svg"></svg>
+    <style>
+     #svg-demo {
+
+     }
+     .spinning {
+       fill: #666;
+       animation: spin 4s linear infinite;
+       transform-origin: 50% 50%;
+     }
+     @keyframes spin {
+       100% {
+         transform: rotate(360deg);
+       }
+     }
+    </style>
+    <script>
+     (function(){
+       var svg = document.getElementById("svg-demo");
+       svg.setAttribute('width', 400);
+       svg.setAttribute('height', 400);
+       var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+       rect.setAttribute('x', 150);
+       rect.setAttribute('y', 150);
+       rect.setAttribute('width', 100);
+       rect.setAttribute('height', 100);
+       rect.setAttribute('class', 'spinning');
+       svg.appendChild(rect);
+      })();
+    </script>
+    </div>
     </div>
     <h2>Translating Shapefiles to GeoJSON</h2>
     <p>
       The defacto standard for working with geodata on the web is GeoJSON.
-      It's eeasy to translate a shapefile to json using ogr2ogr.
+      It's easy to translate a shapefile to json using ogr2ogr.
     </p>
     <pre>
 ogr2ogr out.json src.shp -f GeoJSON -simplify 10.0 -t_srs EPSG:3857</pre>
@@ -99,7 +199,6 @@ topojson source.shp -o out.topojson
        });
 
      function draw(json) {
-       console.log(json);
        var bounds = [Infinity, Infinity, -Infinity, -Infinity];
        json.features.forEach(function(feature){
          if(feature.geometry.type != "Polygon")
@@ -137,7 +236,7 @@ topojson source.shp -o out.topojson
          });
          ctx.closePath();
          ctx.fillStyle = "rgba(64, 135, 70," + (feature.properties.p_black / 100.0) + ")";
-         ctx.strokeStyle = "rgb(60, 179, 81)";
+         ctx.strokeStyle = "#666";
          ctx.lineWidth = 0.5;
          ctx.fill();
          ctx.stroke();
@@ -146,15 +245,87 @@ topojson source.shp -o out.topojson
      };
     </script>
     <h2>Using d3 to make a Map</h2>
-    <div class="run">
-      <pre>
-      </pre>
-    </div>
+    <p>
+      Mike Bostock has a great tutorial on using d3 for
+      <a href="https://bost.ocks.org/mike/map/">mapping</a>, it's
+      written in an old version of d3, but only the names of the
+      functions have changed. For example d3.geo.transverseMercator
+      is now d3.geoTransversemercator.
+    </p>
+    <svg id="d3">
+    </svg>
+
+    <style>
+     .border {
+       fill: none;
+       stroke: #666;
+       stroke-linejoin: round;
+     }
+    </style>
+    <script>
+     d3.json("./brooklyn-demos.topojson", function(error, data) {
+       if(error) throw error;
+
+       var d3map = d3.select("#d3");
+       d3map.style("width", 400)
+            .style("height", 400);
+
+       var group = d3map.append("g")
+                        .attr("id", "blocks");
+       var tracts = topojson.feature(data, data.objects["brooklyn-demos"]);
+       var projection = d3.geoMercator()
+                          .fitExtent([[0, 0], [400, 400]],
+                                     tracts);
+
+       var path = d3.geoPath()
+                    .projection(projection);
+       // polygons
+       group.selectAll("path")
+            .data(tracts.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("fill", function(it) {
+              return "rgba(64, 135, 70, " + (it.properties.p_black / 100.0) + ")";
+             });
+       group.append("path")
+            .datum(topojson.mesh(data, data.objects["brooklyn-demos"]))
+            .attr("d", path)
+            .attr("class", 'border');
+     });
+    </script>
     <h2>Projections in d3</h2>
-    <div class="run">
-      <pre>
-      </pre>
-    </div>
+    <svg id="projections"></svg>
+    <script>
+     d3.json("../data/world.topojson", function(e, world) {
+       if(e) throw e;
+       var map = d3.select("#projections");
+       map.attr('width', 400)
+          .attr('height', 400);
+       var p = map.append("path").attr("class", "border");
+       var world = topojson.mesh(world, world.objects.land);
+       setInterval(function() {
+         var proj = [
+           d3.geoAlbers,
+           d3.geoMercator,
+           d3.geoGnomonic,
+           d3.geoOrthographic,
+           d3.geoTransverseMercator
+         ][Math.random() * 5 | 0];
+
+
+         var projection = proj()
+                            .fitExtent([[0,0], [400,[400]]], world);
+
+         var path = d3.geoPath()
+                      .projection(projection);
+
+         p.datum(world)
+          .attr("d", path)
+          .attr("class", "border");
+       }, 1000);
+     });
+    </script>
     <!-- finish to here tomorrow -->
     <h2>Using Proj4 to project points with d3</h2>
     <div class="run">
