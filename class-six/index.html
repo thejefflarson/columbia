@@ -7,8 +7,9 @@
     <link rel="stylesheet" href="../stylesheets/leaflet.css">
     <script src="../javascripts/d3.js"></script>
     <script src="../javascripts/topojson.min.js"></script>
-    <script src="../javascripts/leaflet.js"></script>
+    <script src="../javascripts/leaflet-src.js"></script>
     <script src="../javascripts/proj4-src.js"></script>
+    <script src="//d3js.org/d3-tile.v0.0.min.js"></script>
   </head>
   <body>
     <section class="measure-wide">
@@ -105,6 +106,74 @@
         system for recieving and responding to user driven events.
       </p>
     </section>
+    <pre>
+      <svg id="hovers"></svg>
+      <style>
+       .border {
+         fill: none;
+         stroke: #666;
+         stroke-linejoin: round;
+       }
+       #tooltip {
+         display: none;
+         position: absolute;
+         padding: 5px;
+         border: 1px solid #efefef;
+         background-color: white;
+       }
+      </style>
+      <script>
+       d3.json("../class-five/brooklyn-demos.topojson", function(error, data) {
+         if(error) throw error;
+         // this is just our booklyn class from last time
+         var d3map = d3.select("#hovers");
+         d3map.style("width", 400)
+              .style("height", 400);
+
+         var group = d3map.append("g")
+                          .attr("id", "blocks");
+         var tracts = topojson.feature(data, data.objects["brooklyn-demos"]);
+         var projection = d3.geoMercator()
+                            .fitExtent([[0, 0], [400, 400]],
+                                       tracts);
+
+         // our little hover html element, that is absolutely positioned.
+         var hover = d3.select("body")
+                       .append("div")
+                       .attr("id", "tooltip");
+         d3map.on('mouseenter', function() {
+           hover.style('display', 'block');
+         }).on('mousemove', function() {
+           hover.style('top', d3.event.pageY + 10)
+                .style('left', d3.event.pageX + 10);
+         }).on('mouseleave', function() {
+           hover.style('display', 'none');
+         });
+
+         var path = d3.geoPath()
+                      .projection(projection);
+         // polygons
+         group.selectAll("path")
+              .data(tracts.features)
+              .enter()
+              .append("path")
+              .attr("d", path)
+              .attr("fill", function(it) {
+                return "rgba(64, 135, 70, " + (it.properties.p_black / 100.0) + ")";
+              })
+         // but here we'll add some custom logic to draw a hover.
+              .on("mouseenter", function(it) {
+                hover.html("<b class='fw5'>Black Percent</strong>: " +
+                           Math.floor(it.properties.p_black) + "%");
+              })
+
+         group.append("path")
+              .datum(topojson.mesh(data, data.objects["brooklyn-demos"]))
+              .attr("d", path)
+              .attr("class", 'border');
+       });
+      </script>
+    </pre>
 
     <svg id="hovers"></svg>
     <style>
@@ -183,12 +252,227 @@
         is twice as big as every other, in other words:
       </p>
       <div class="center">pixel = world * 2 ^ zoomLevel</div>
+      <p>
+        Here's a very simple tile serve that emits json tiles, using a web
+        framework called <a href="http://flask.pocoo.org/docs/0.11/">flask</a>.
+      </p>
     </section>
+    <pre>
+
+    </pre>
+
     <section>
-      <h2>Tiles in d3</h2>
+      <h2>GeoJSON tiles in d3</h2>
+      <p>
+        So let's take a look. We'll use D3-tile and a slightly editied version
+        of <a href="http://bl.ocks.org/mbostock/5593150">this block</a> to see
+        what our server spits out. If you're curious you can view the source.
+      </p>
     </section>
+    <style>
+
+     body {
+       margin: 0;
+     }
+
+     .map {
+       position: relative;
+       overflow: hidden;
+       border: 2px solid #666;
+     }
+
+     .layer {
+       position: absolute;
+       will-change: transform;
+     }
+
+     .tile {
+       position: absolute;
+       width: 256px;
+       height: 256px;
+     }
+
+     .tile path {
+       fill: none;
+       stroke: #000;
+       stroke-linejoin: round;
+       stroke-linecap: round;
+     }
+
+     .tile .major_road {
+       stroke: #776;
+     }
+
+     .tile .minor_road {
+       stroke: #ccb;
+     }
+
+     .tile .highway {
+       stroke: #f39;
+       stroke-width: 1.5px;
+     }
+
+     .tile .rail {
+       stroke: #7de;
+     }
+
+     .info {
+       position: absolute;
+       bottom: 10px;
+       left: 10px;
+     }
+
+    </style>
+    <script>
+     var pi = Math.PI,
+         tau = 2 * pi;
+
+     var width = 600,
+         height = 300;
+
+     // Initialize the projection to fit the world in a 1×1 square centered at the origin.
+     var projection = d3.geoMercator()
+                        .scale(1 / tau)
+                        .translate([0, 0]);
+
+     var path = d3.geoPath()
+                  .projection(projection);
+
+     var tile = d3.tile()
+                  .size([width, height]);
+
+     var zoom = d3.zoom()
+                  .scaleExtent([1 << 20, 1 << 23])
+                  .on("zoom", zoomed);
+
+     var map = d3.select("body").append("div")
+                 .attr("class", "map")
+                 .style("width", width + "px")
+                 .style("height", height + "px")
+                 .on("mousemove", mousemoved);
+
+     var layer = map.append("div")
+                    .attr("class", "layer");
+
+     var info = map.append("div")
+                   .attr("class", "info");
+
+     // Compute the projected initial center.
+     var center = projection([-74.0064, 40.7142]);
+
+     // Apply a zoom transform equivalent to projection.{scale,translate,center}.
+     map.call(zoom)
+        .call(zoom.transform, d3.zoomIdentity
+                                 .translate(width / 2, height / 2)
+                                 .scale(1 << 10)
+                                 .translate(-center[0], -center[1]));
+
+     function zoomed() {
+       var transform = d3.event.transform;
+
+       var tiles = tile
+         .scale(transform.k)
+         .translate([transform.x, transform.y])
+       ();
+
+       projection
+         .scale(transform.k / tau)
+         .translate([transform.x, transform.y]);
+
+       var image = layer
+         .style("transform", stringify(tiles.scale, tiles.translate))
+         .selectAll(".tile")
+         .data(tiles, function(d) { return d; });
+
+       image.exit()
+            .each(function(d) { this._xhr.abort(); })
+            .remove();
+
+       image.enter().append("svg")
+            .attr("class", "tile")
+            .style("left", function(d) { return d[0] * 256 + "px"; })
+            .style("top", function(d) { return d[1] * 256 + "px"; })
+            .each(function(d) { this._xhr = render(d, this); });
+     }
+
+     function render(d, node) {
+       return d3.json("http://localhost:5000/" + d[0] + "/" + d[1] + "/" + d[2] + ".json", function(error, json) {
+         if (error) throw error;
+         var k = Math.pow(2, d[2]) * 256; // size of the world in pixels
+
+         d3.select(node).selectAll("path")
+           .data(json.land.features.sort(function(a, b) { return a.properties.sort_key - b.properties.sort_key; }))
+           .enter().append("path")
+           .attr("class", function(d) { return d.properties.kind; })
+           .attr("d", d3.geoPath()
+                        .projection(d3.geoMercator()
+                                      .scale(k / tau)
+                                      .translate([k / 2 - d[0] * 256, k / 2 - d[1] * 256])
+                                      .precision(0)));
+       });
+     }
+
+     function stringify(scale, translate) {
+       var k = scale / 256, r = scale % 1 ? Number : Math.round;
+       return "matrix3d(" + [k, 0, 0, 0, 0, k, 0, 0, 0, 0, k, 0, r(translate[0] * scale), r(translate[1] * scale), 0, 1 ] + ")";
+     }
+
+     function mousemoved() {
+       info.text(formatLocation(projection.invert(d3.mouse(this)), d3.zoomTransform(this).k));
+     }
+
+     function formatLocation(p, k) {
+       var format = d3.format("." + Math.floor(Math.log(k) / 2 - 2) + "f");
+       return (p[1] < 0 ? format(-p[1]) + "°S" : format(p[1]) + "°N") + " "
+           + (p[0] < 0 ? format(-p[0]) + "°W" : format(p[0]) + "°E");
+     }
+
+    </script>
     <section>
       <h2>Tiles in Leaflet</h2>
+      <p>
+        <a href="http://leafletjs.com/">Leaflet</a> is a great open source toolkit for
+        making slippy maps. It's is very different form d3 but in some ways
+        simpler to use. We can use satellite data from <a href="https://github.com/nasa-gibs/gibs-web-examples">NASA</a> as
+        our base layer, and then add GeoJSON from our server using <a href="https://github.com/glenrobertson/leaflet-tilelayer-geojson">this leaflet
+          plugin.</a>
+      </p>
+    </section>
+    <style>
+     #lmap {
+       width: 100%;
+       height: 600px;
+     }
+    </style>
+    <div id="lmap"></div>
+    <script>
+     // from https://earthdata.nasa.gov/labs/gibs/examples/leaflet/webmercator-epsg3857.js
+     var m = L.map('lmap', { scrollWheelZoom: false })
+              .setView([40.6974881,-73.979681], 3);
+     var template =
+       "//map1{s}.vis.earthdata.nasa.gov/wmts-webmerc/" +
+       "{layer}/default/{time}/{tileMatrixSet}/{z}/{y}/{x}.jpg";
+
+     var layr = L.tileLayer(template, {
+       layer: "MODIS_Terra_CorrectedReflectance_TrueColor",
+       tileMatrixSet: "GoogleMapsCompatible_Level9",
+       maxZoom: 9,
+       time: "2016-10-04",
+       tileSize: 256,
+       subdomains: "abc"
+     });
+
+     m.addLayer(layr);
+     d3.json("./world.json", function(data) {
+       L.geoJSON(data);
+     });
+    </script>
+    <section>
+      <h2>Homework</h2>
+      <p>
+        Create a version of your county map using d3, with your dot density map
+        on top.
+      </p>
     </section>
   </body>
 </html>
