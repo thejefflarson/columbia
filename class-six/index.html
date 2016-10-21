@@ -51,7 +51,7 @@
         <a href="http://proj4js.org/">proj4</a> that you can use to reproject
         your data into a more appropriate projection. You can look up state by
         state projections and country projections at
-        <a href="http://spatialreference.org/"></a>.
+        <a href="http://spatialreference.org/">Spatial Reference</a>.
       </p>
       <p class="pb2">
         Mike Corey has written up a pretty great guide on how to pick a
@@ -343,7 +343,7 @@ def tile2ll(x, y, z):
     return [lon, lat]
 
 
-@app.route("/<x>/<y>/<z>.json")
+@app.route("/&lt;x&gt;/&lt;y&gt;/&lt;z&gt;.json")
 def tile(x=None, y=None, z=None):
     if not (x and y and z):
         raise Exception('Need x, y, and z got: %s, %s, %s' % (x, y, z))
