@@ -1,0 +1,194 @@
+<html>
+  <head>
+    <title>Class Seven | Columbia GIS</title>
+    <link rel="stylesheet" href="../stylesheets/reset.css">
+    <link rel="stylesheet" href="../stylesheets/tachyons.min.css">
+    <link rel="stylesheet" href="../stylesheets/tweaks.css">
+    <link rel="stylesheet" href="../stylesheets/leaflet.css">
+    <script src="../javascripts/d3.js"></script>
+    <script src="../javascripts/topojson.min.js"></script>
+    <script src="../javascripts/leaflet.js"></script>
+    <script src="../javascripts/proj4-src.js"></script>
+  </head>
+  <body>
+    <section class="measure-wide">
+      <h2>Updates</h2>
+      <p>
+        Study hall this week seemed to be helpful for folks, a number of you
+        have completed the first homework, which is great. I'm thinking we
+        should try another in a few weeks if there are any  takers.
+        A reminder, I'm on slack pretty much every day if you have questions.
+      </p>
+      <p>
+        I'm thinking we should try another in a few weeks if there are any
+        takers.
+      </p>
+      <p>
+        And picking back up on our project I tracked down France's
+        <a class="link blue" href="https://www.geoportail.gouv.fr/">geospatial portal</a>, which
+        seems cool, though It is hard for me to tell because I don't speak
+        french.
+      </p>
+    </section>
+    <!-- finish to here tomorrow -->
+    <section>
+      <h2>Using Proj4 to project points with d3</h2>
+      <p>
+        Sometimes the built in
+        <a class="link blue" href="https://github.com/d3/d3-geo/blob/master/README.md#projections">
+          projections
+        </a> in d3 aren't appropriate or familiar for local mapping and local
+        audiences. Thankfully there is a library called
+        <a href="http://proj4js.org/">proj4</a> that you can use to reproject
+        your data into a more appropriate projection. You can look up state by
+        state projections and country projections at
+        <a href="http://spatialreference.org/"></a>.
+      </p>
+      <p>
+        Mike Corey has written up a pretty great guide on how to pick a
+        <a href="https://source.opennews.org/en-US/learning/choosing-right-map-projection/">projection.</a>
+      </p>
+    </section>
+    <section id="projections">
+      <svg id="unprojected"></svg>
+      <svg id="projected"></svg>
+    </section>
+    <style>
+     #projections path {
+       fill: none;
+       stroke: #666;
+       stroke-linejoin: round;
+     }
+    </style>
+    <script>
+     d3.json("./ny.json", function(error, data) {
+       if(error) throw error;
+
+       var unproj = d3.select("#unprojected");
+       unproj.style("width", 400)
+             .style("height", 400);
+
+       var proj = d3.geoProjection(function(x, y) { return [x, y]; })
+                    .fitSize([400, 400], data);
+       var path = d3.geoPath()
+                    .projection(proj);
+
+       unproj.append("path")
+             .datum(data)
+             .attr("d", path);
+
+
+       var projection = proj4("+proj=tmerc +lat_0=40 +lon_0=-76.58333333333333 +k=0.9999375 +x_0=250000 +y_0=0 +ellps=GRS80 +units=m +no_defs")
+
+       var projected = d3.select("#projected");
+       projected.style("width", 400)
+                .style("height", 400);
+
+       var proj = d3.geoProjection(function(x, y) {
+         return projection.forward([x, y]);
+       }).fitSize([400, 400], data);
+
+       var path = d3.geoPath()
+                    .projection(proj);
+
+       projected.append("path")
+                .datum(data)
+                .attr("d", path);
+     });
+    </script>
+
+    <section>
+      <h2>Implementing Hovers</h2>
+      <p>
+        While color schemes are a nice visual cue for quick understanding, often
+        on the web we want to be able to explore what is on a map. D3 has a good
+        system for recieving and responding to user driven events.
+      </p>
+    </section>
+
+    <svg id="hovers"></svg>
+    <style>
+     .border {
+       fill: none;
+       stroke: #666;
+       stroke-linejoin: round;
+     }
+     #tooltip {
+       display: none;
+       position: absolute;
+       padding: 5px;
+       border: 1px solid #efefef;
+       background-color: white;
+     }
+    </style>
+    <script>
+     d3.json("../class-five/brooklyn-demos.topojson", function(error, data) {
+       if(error) throw error;
+       // this is just our booklyn class from last time
+       var d3map = d3.select("#hovers");
+       d3map.style("width", 400)
+            .style("height", 400);
+
+       var group = d3map.append("g")
+                        .attr("id", "blocks");
+       var tracts = topojson.feature(data, data.objects["brooklyn-demos"]);
+       var projection = d3.geoMercator()
+                          .fitExtent([[0, 0], [400, 400]],
+                                     tracts);
+
+       // our little hover html element, that is absolutely positioned.
+       var hover = d3.select("body")
+                     .append("div")
+                     .attr("id", "tooltip");
+       d3map.on('mouseenter', function() {
+               hover.style('display', 'block');
+             }).on('mousemove', function() {
+               hover.style('top', d3.event.pageY + 10)
+                    .style('left', d3.event.pageX + 10);
+             }).on('mouseleave', function() {
+               hover.style('display', 'none');
+             });
+
+       var path = d3.geoPath()
+                    .projection(projection);
+       // polygons
+       group.selectAll("path")
+            .data(tracts.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("fill", function(it) {
+              return "rgba(64, 135, 70, " + (it.properties.p_black / 100.0) + ")";
+            })
+            // but here we'll add some custom logic to draw a hover.
+            .on("mouseenter", function(it) {
+               hover.html("<b class='fw5'>Black Percent</strong>: " +
+                          Math.floor(it.properties.p_black) + "%");
+            })
+
+       group.append("path")
+            .datum(topojson.mesh(data, data.objects["brooklyn-demos"]))
+            .attr("d", path)
+            .attr("class", 'border');
+     });
+    </script>
+
+    <section>
+      <h2>Tiles</h2>
+      <p>
+        Most interactive maps on the web are composed of tiles. Rather than
+        sending gigabytes of information over the wire, engineers at google
+        figured out a long time ago that you could use what's known as a
+        quadtree to slice a projected map into tiny squares. Every zoom level
+        is twice as big as every other, in other words:
+      </p>
+      <div class="center">pixel = world * 2 ^ zoomLevel</div>
+    </section>
+    <section>
+      <h2>Tiles in d3</h2>
+    </section>
+    <section>
+      <h2>Tiles in Leaflet</h2>
+    </section>
+  </body>
+</html>
