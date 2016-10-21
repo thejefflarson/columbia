@@ -1,0 +1,11 @@
+GEO.id,Id
+GEO.id2,Id2
+GEO.display-label,Geography
+HC01_EST_VC13,Households; Estimate; Median income (dollars)
+HC01_MOE_VC13,Households; Margin of Error; Median income (dollars)
+HC02_EST_VC13,Families; Estimate; Median income (dollars)
+HC02_MOE_VC13,Families; Margin of Error; Median income (dollars)
+HC03_EST_VC13,Married-couple families; Estimate; Median income (dollars)
+HC03_MOE_VC13,Married-couple families; Margin of Error; Median income (dollars)
+HC04_EST_VC13,Nonfamily households; Estimate; Median income (dollars)
+HC04_MOE_VC13,Nonfamily households; Margin of Error; Median income (dollars)
