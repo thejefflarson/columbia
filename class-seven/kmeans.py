@@ -1,7 +1,6 @@
 import random
 from statistics import mean
 
-
 import fiona
 from pyproj import Proj, transform as project
 from shapely.geometry import Point, shape, mapping
