@@ -1,32 +1,35 @@
 <html>
   <head>
     <title>Class Seven</title>
+    <link rel="stylesheet" href="../stylesheets/reset.css">
+    <link rel="stylesheet" href="../stylesheets/tachyons.min.css">
+    <link rel="stylesheet" href="../stylesheets/tweaks.css">
   </head>
-  <body>
-    <section>
-    <h2>Update</h2>
+  <body class="pa8 w-100 pa5 sans-serif fw3 f3 lh-copy bg-washed-red">
+    <section class="measure-wide">
+    <h2 class="bb fw3 f1 lh-title mb3" class="bb fw3 f1 lh-title mb3">Update</h2>
     <p>It's probably time to start thinking about final projects. For these
       final six weeks, we'll have three more homework assignments, and we're
       going to shift to Raster based GIS, which personally, I find more
       exciting. I hope you do too.</p>
-    <p>Before we go, we'll cover two algorithms that can help you find stories
+    <p class="pb2">Before we go, we'll cover two algorithms that can help you find stories
       in data, kmeans and DBSCAN. We'll cover them in class, but the wonderful
-      <a href="http://scikit-learn.org/stable/">scikit learn</a> library has
+      <a class="dark-red" href="http://scikit-learn.org/stable/">scikit learn</a> library has
       both of them, and is probably much faster than below.
-    <p>Oh also, I stumbled across <a href="http://epsg.io/">epsg.io</a>
+    <p class="pb2">Oh also, I stumbled across <a class="dark-red" href="http://epsg.io/">epsg.io</a>
       which is a better Spatial Reference, in that it only includes official
       projections.</p>
     </section>
-    <section>
-    <h2>Clustering with K-Means</h2>
-    <p><a href="http://scikit-learn.org/stable/modules/clustering.html#k-means">K-means</a> is a simple and unsupervised algorithm that can find clusters in
+    <section class="measure-wide">
+    <h2 class="bb fw3 f1 lh-title mb3">Clustering with K-Means</h2>
+    <p class="pb2"><a class="dark-red" href="http://scikit-learn.org/stable/modules/clustering.html#k-means">K-means</a> is a simple and unsupervised algorithm that can find clusters in
       point data very quickly. It does this by assigning each point to the
       cluster with the nearest center, and then repeating the process.</p>
-    <p>While straightforward, it relies on you guessing ahead of time how many
+    <p class="pb2">While straightforward, it relies on you guessing ahead of time how many
       clusters you think there are, so it's not super helpful in exploring a
       dataset, or finding stories in one.</p>
     </section>
-    <pre>
+    <pre class="f4 code fw3">
 import random
 from statistics import mean
 
@@ -93,14 +96,14 @@ with fiona.drivers():
                     'cluster': cluster
                 }
             })</pre>
-    <section>
-    <h2>Clustering with DBSCAN</h2>
-    <p><a href="http://scikit-learn.org/stable/auto_examples/cluster/plot_dbscan.html">DBSCAN</a> is a slick algorithm that doesn't rely on you knowing how many clusters
+    <section class="measure-wide">
+    <h2 class="bb fw3 f1 lh-title mb3">Clustering with DBSCAN</h2>
+    <p class="pb2"><a class="dark-red" href="http://scikit-learn.org/stable/auto_examples/cluster/plot_dbscan.html">DBSCAN</a> is a slick algorithm that doesn't rely on you knowing how many clusters
       you want to find ahead of time. Instead it relies on two values, a search
       radius, and a minumum number of neighbours. It's also a bit easier to
       implement. As a plus, DBSCAN will also remove so-called "noise" nodes</p>
     </section>
-    <pre>
+    <pre  class="f4 code fw3">
 # tracking array for cluster assignments
 clusters = [False] * len(points)
 # DBSCAN
@@ -140,13 +143,13 @@ for idx, _ in enumerate(points):
                 nearest.extend(nearby)
             clusters[nidx] = c
     </pre>
-    <section>
-      <h2>Satellite Images!</h2>
-      <p>For the next few weeks we're going to talk about raster datasets,
+    <section class="measure-wide">
+      <h2 class="bb fw3 f1 lh-title mb3">Satellite Images!</h2>
+      <p class="pb2">For the next few weeks we're going to talk about raster datasets,
         datasets that are geospatial but behave like images. You'll want to poke
-        around <a href="http://earthexplorer.usgs.gov/">Earth Explorer</a> to
+        around <a class="dark-red" href="http://earthexplorer.usgs.gov/">Earth Explorer</a> to
         see what's available and you'll need to install landsat util:</p>
-        <pre>
+      <pre  class="f4 code fw3">
 pip install landsat-util
 
 # to lookup satellite images
@@ -154,17 +157,17 @@ landsat search --address '689 Myrtle Ave, Brooklyn, NY 11205' -c1
 
 # to downlaod them
 landsat download LC80130322016170LGN00 -b4,3,2</pre>
-      <h2>Combining bands and Color Correction</h2>
-      <p>To save bandwidth landsat util downloads bands one at a time. You can use
+      <h2 class="bb fw3 f1 lh-title mb3">Combining bands and Color Correction</h2>
+      <p class="pb2">To save bandwidth landsat util downloads bands one at a time. You can use
         it to combine them into one image, but you also can use
-        <a href="https://mapbox.github.io/rasterio/">rasterio</a> for processing.
+        <a class="dark-red" href="https://mapbox.github.io/rasterio/">rasterio</a> for processing.
       </p>
-      <pre>
+      <pre class="f4 code fw3">
 pip install rasterio</pre>
-      <p>Because the cameras on satellites are really sensitive, we almost
+      <p class="pb2">Because the cameras on satellites are really sensitive, we almost
         always need to color correct the images we download from them</p>
     </section>
-    <pre>import rasterio as rio
+    <pre  class="f4 code fw3">import rasterio as rio
 import numpy as np
 
 with rio.open('B4.TIF') as red:
