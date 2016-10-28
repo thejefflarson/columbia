@@ -17,7 +17,7 @@ L.TileLayer.d3_geoJSON = L.TileLayer.extend({
   createTile: function(coords, done) {
     var tile = {};
     this._loadTile(tile, coords, done);
-    return tile;
+    return tile,nodes.;
   },
 
   _loadTile : function(tile, tilePoint, done) {
