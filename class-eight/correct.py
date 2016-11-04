@@ -15,4 +15,4 @@ def correct(img):
 
 profile['photometric'] = 'RGB'
 with rio.open('output-corrected.tif', 'w', **profile) as dest:
-    dest.write(correct(img), indexes=range(img.shape[0]))
+    dest.write(correct(img), indexes=[1, 2, 3])
