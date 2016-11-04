@@ -1,0 +1,185 @@
+<html>
+  <head>
+    <title>Class Eight | Columbia GIS</title>
+    <link rel="stylesheet" href="../stylesheets/reset.css">
+    <link rel="stylesheet" href="../stylesheets/tachyons.min.css">
+  </head>
+  <body class="sans-serif pv4 pl6 fw1 lh-copy w-100 w-70-l bg-black-90 white">
+    <section>
+      <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">A dive into landsat bands</h2>
+      <p class="measure-wide pb2">
+        This week we're going to go over landsat bands, and play a bit with color combinations. First things first, I downloaded the raster we're using here with the associated bands using <a class="gold link" href="https://github.com/developmentseed/landsat-util">landsat-util</a>.
+      </p>
+      <pre>
+landsat download LC80130322016170LGN00 -b11,10,9,8,7,6,5,4,3,2,1</pre>
+      <p class="measure-wide pb2">Here's what wavelengths each band is:
+      </p>
+      <img src="bands.jpg">
+      <p class=""measure-wide pb2">You can see some common combinations <a class="fw1 f3 mv3 bb ttu lh-title gold tracked" href="http://www.harrisgeospatial.com/Home/NewsUpdates/TabId/170/ArtMID/735/ArticleID/14305/The-Many-Band-Combinations-of-Landsat-8.aspx">here.</a></p>
+    </section>
+    <section>
+      <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Better color correction</h2>
+      <pre>
+import numpy as np
+import rasterio as rio
+
+with rio.open('nyc.tif') as raster:
+    img = raster.read()
+    profile = raster.meta
+
+
+def correct(img):
+    mask = np.logical_and(img > 0, img < 65535)
+    top = np.percentile(img[mask], 99.9)
+    bottom = np.percentile(img[mask], 0.01)
+    scaled = (img - bottom) / float(top - bottom) * 65535
+    return np.clip(scaled, 0, 65535).astype(np.uint16)
+
+profile['photometric'] = 'RGB'
+with rio.open('output-corrected.tif', 'w', **profile) as dest:
+    dest.write(correct(img), indexes=[1, 2, 3])
+      </pre>
+    </section>
+    <section>
+      <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Band Combinations</h2>
+      <p class="measure-wide pb2">
+        Using true color images isn't the only way to look at satellite imagery, most US government satelites collect information from higher light wavelengths like light infrared.
+      </p>
+      <pre>
+import sys
+
+import numpy as np
+import rasterio as rio
+
+bands = []
+for i in sys.argv[1:]:
+    with rio.open('nyc/B%s.TIF' % i) as raster:
+        bands.append(raster.read(1))
+        profile = raster.meta
+
+
+def correct(img):
+    mask = np.logical_and(img > 0, img < 65535)
+    top = np.percentile(img[mask], 99.9)
+    bottom = np.percentile(img[mask], 0.01)
+    scaled = (img - bottom) / float(top - bottom) * 65535
+    return np.clip(scaled, 0, 65535).astype(np.uint16)
+
+img = correct(np.array(bands))
+
+profile['count'] = img.shape[0]
+profile['photometric'] = 'RGB'
+with rio.open('nyc/%s.tif' % (''.join(sys.argv[1:])), 'w', **profile) as dest:
+    dest.write(correct(img), indexes=list(range(img.shape[0] + 1))[1:])</pre>
+      <section>
+        <h3>True Color</h3>
+        <p class="measure-wide pb2">
+        </p>
+        <pre>
+python correct-combine  4 3 2
+gdal_translate nyc/432.tif nyc/432.png -projwin 579784.654973  4510357.217369  598693.420627  4489366.567310  -of PNG -ot Byte -scale 0 65536 0 255
+        </pre>
+        <img src="nyc/432.png">
+      </section>
+      <section>
+        <h3>Emphasize water</h3>
+        <p class="measure-wide pb2">
+        </p>
+        <pre>
+python correct-combine 4 3 1
+gdal_translate nyc/431.tif nyc/431.png -projwin 579784.654973  4510357.217369  598693.420627  4489366.567310  -of PNG -ot Byte -scale 0 65536 0 255
+        </pre>
+        <img src="nyc/431.png">
+      </section>
+      <section>
+        <h3>Using infrared for the green band emphasizes vegetation </h3>
+        <p class="measure-wide pb2">
+        </p>
+        <pre>
+python correct-combine 4 5 2
+gdal_translate nyc/452.tif nyc/452.png -projwin 579784.654973  4510357.217369  598693.420627  4489366.567310  -of PNG -ot Byte -scale 0 65536 0 255
+        </pre>
+        <img src="nyc/452.png">
+      </section>
+      <section>
+        <h3>Useful for crops</h3>
+        <p class="measure-wide pb2">
+        </p>
+        <pre>
+python correct-combine 6 5 2
+gdal_translate nyc/652.tif nyc/652.png -projwin 579784.654973  4510357.217369  598693.420627  4489366.567310  -of PNG -ot Byte -scale 0 65536 0 255
+        </pre>
+        <img src="nyc/652.png">
+      </section>
+      <section>
+        <h3>What USGS uses for landsat look</h3>
+        <p class="measure-wide pb2">
+        </p>
+        <pre>
+python correct-combine 7 5 3
+gdal_translate nyc/753.tif nyc/753.png -projwin 579784.654973  4510357.217369  598693.420627  4489366.567310  -of PNG -ot Byte -scale 0 65536 0 255
+        </pre>
+        <img src="nyc/753.png">
+      </section>
+      <section>
+        <h3>Urban Environments Emphasis on Buildings</h3>
+        <p class="measure-wide pb2">
+        </p>
+        <pre>
+python correct-combine 7 6 4
+gdal_translate nyc/764.tif nyc/764.png -projwin 579784.654973  4510357.217369  598693.420627  4489366.567310  -of PNG -ot Byte -scale 0 65536 0 255
+        </pre>
+        <img src="nyc/764.png">
+      </section>
+      <section>
+        <h3>Pan chromatic band </h3>
+        <p class="measure-wide pb2">
+          This band is higher resolution than the others. We also can use <a class="gold link" href="http://earthexplorer.usgs.gov/">earthexplorer</a> to find orthoimagery that is even higher resolution.
+        </p>
+        <pre>
+python correct-combine 8
+gdal_translate nyc/8.tif nyc/8.png -projwin 579784.654973  4510357.217369  598693.420627  4489366.567310  -of PNG -ot Byte -scale 0 65536 0 255
+        </pre>
+        <img src="nyc/8.png">
+      </section>
+      <section>
+        <h3>NDVI </h3>
+        <p class="measure-wide pb2">
+          NDVI or the Normalized Diffenence Vegetation Index is a way to quantify vegetation. Because it's a ratio it's better for comparing across scenes.
+        </p>
+        <pre>
+import sys
+
+import numpy as np
+import rasterio as rio
+
+bands = []
+for i in [5, 4]:
+    with rio.open('brazil/B%s.TIF' % i) as raster:
+        bands.append(raster.read(1).astype(np.float32))
+        profile = raster.meta
+
+nir, r = bands
+ndvi = (nir - r) / (nir + r)
+
+profile['dtype'] = 'float32'
+profile['nodata'] = 0
+with rio.open('brazil/ndvi.tif', 'w', **profile) as dest:
+    dest.write(ndvi, 1)
+        </pre>
+      </section>
+    </section>
+    <section>
+      <h2 class="fw1 f3 mv3 bb ttu lh-title gold tracked">Homework</h2>
+      <p class="measure-wide pb2">
+        Use landsat util to download bands 5 (near IR) and 7 (SWIR) for your county and use them to create a raster of <a class="gold link" href="http://modis-atmos.gsfc.nasa.gov/new_reference/data/papers/Karneili_et_al.2000.pdf">aerosol free vegetation index</a>, which does better than NDVI at handling clouds and pollution:
+      </p>
+      <div class="center">
+        AFRI = (nir - 0.5 * swir) / (nir + 0.5 * swir)
+      </div>
+      <p class="measure-wide pb2">
+        Send me your scaled output from QGIS
+      </p>
+    </section>
+  </body>
+</html>
