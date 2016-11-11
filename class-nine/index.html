@@ -59,7 +59,7 @@ def calc_ndvi(path, bounds):
         cropped, _ = mask(src, [bounds], crop=True)
         r = cropped
 
-    ndvi = (nir - r) / (nir + r)
+    ndvi = (nir - r) / (nir + r).astype(np.float64
     ndvi[nir == 0] = 0
     ndvi[r == 0] = 0
     del nir
@@ -74,7 +74,7 @@ bounds = min_bounds(['aleppo/2013', 'aleppo/2016'])
 first, meta = calc_ndvi('aleppo/2013', bounds)
 second, _ = calc_ndvi('aleppo/2016', bounds)
 result = second - first
-result = (result - np.mean(result) / np.std(result))
+result = (result - np.mean(result)) / np.std(result)
 result = np.clip(result, 0, 1).reshape(second.shape)
 result[first == 0] = 0
 result[second == 0] = 0
@@ -103,7 +103,7 @@ with rio.open('ndvi.tif') as ndvi:
     with rio.open('aleppo/2016/B8.tif') as pan:
         pan_band = pan.read(1)
         newndvi = np.empty(shape=pan_band.shape)
-        reproject(ndvi.read(), newndvi,
+        reproject(ndvi.read(1), newndvi,
                   src_transform=ndvi.transform,
                   src_crs=ndvi.crs,
                   dst_transform=pan.transform,
@@ -112,7 +112,7 @@ with rio.open('ndvi.tif') as ndvi:
                   threads=2)
 
         pan_scaled = correct(pan_band) / 65536.0
-        ndvi_scaled = np.clip(newndvi / np.max(0.60), 0, 1)
+        ndvi_scaled = np.clip(newndvi / np.max(newndvi), 0, 1)
         del pan_band
         del newndvi
         gc.collect()

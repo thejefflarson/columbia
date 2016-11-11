@@ -47,7 +47,7 @@ bounds = min_bounds(['aleppo/2013', 'aleppo/2016'])
 first, meta = calc_ndvi('aleppo/2013', bounds)
 second, _ = calc_ndvi('aleppo/2016', bounds)
 result = second - first
-result = (result - np.mean(result) / np.std(result))
+result = (result - np.mean(result)) / np.std(result)
 result = np.clip(result, 0, 1).reshape(second.shape)
 result[first == 0] = 0
 result[second == 0] = 0

@@ -16,7 +16,7 @@ with rio.open('ndvi.tif') as ndvi:
     with rio.open('aleppo/2016/B8.tif') as pan:
         pan_band = pan.read(1)
         newndvi = np.empty(shape=pan_band.shape)
-        reproject(ndvi.read(), newndvi,
+        reproject(ndvi.read(1), newndvi,
                   src_transform=ndvi.transform,
                   src_crs=ndvi.crs,
                   dst_transform=pan.transform,
@@ -25,7 +25,7 @@ with rio.open('ndvi.tif') as ndvi:
                   threads=2)
 
         pan_scaled = correct(pan_band) / 65536.0
-        ndvi_scaled = np.clip(newndvi / np.max(0.60), 0, 1)
+        ndvi_scaled = np.clip(newndvi / np.max(), 0, 1)
         del pan_band
         del newndvi
         gc.collect()
