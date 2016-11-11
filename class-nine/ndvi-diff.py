@@ -44,8 +44,8 @@ def calc_ndvi(path, bounds):
 
 bounds = min_bounds(['aleppo/2013', 'aleppo/2016'])
 
-first, _ = calc_ndvi('aleppo/2013', bounds)
-second, meta = calc_ndvi('aleppo/2016', bounds)
+first, meta = calc_ndvi('aleppo/2013', bounds)
+second, _ = calc_ndvi('aleppo/2016', bounds)
 result = second - first
 result = (result - np.mean(result) / np.std(result))
 result = np.clip(result, 0, 1).reshape(second.shape)
