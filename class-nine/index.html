@@ -1,0 +1,150 @@
+<html>
+  <head>
+    <title>Class Nine | Columbia GIS</title>
+    <link rel="stylesheet" href="../stylesheets/reset.css">
+    <link rel="stylesheet" href="../stylesheets/tachyons.min.css">
+  </head>
+  <body class="sans-serif pv4 pl6 fw1 lh-copy w-100 w-70-l bg-dark-blue white">
+    <h2  class="fw1 f3 mv3 bb ttu lh-title tracked">Filtering Shape Files with OGR</h2>
+    <p>
+      So, after study hall on wednesday I realized I never told you how to
+      filter and simplify a shapefile for the web. Fortunately you can do it
+      with one gdal command:
+    </p>
+    <pre>
+    ogr2ogr -f GeoJSON out.json brooklyn-demos.shp -sql 'select * from "brooklyn-demos" where p_black > 0.10'</pre>
+    <p>
+      That bit at the end there is a SQL command that asks OGR to only give you
+      geometries where percent black is greater than 10%.
+    </p>
+    <h2 class="fw1 f3 mv3 bb ttu lh-title tracked">Case Study: the effect of war in Syria</h2>
+    <p>We're going to look at the effects of the war in Syria using NDVI. First we'll grab a landsat from 2013, and one from 2016</p>
+    <pre class="f4 code fw3">
+landsat search --lon 36.206353 --lat 37.0085005 -c1
+landsat search --lon 36.206353 --lat 37.0085005 -c1 --end 1/1/2014
+    </pre>
+    <p>Then calculate and normalize the difference in NDVI</p>
+    <pre  class="f4 code fw3">
+import gc
+
+import numpy as np
+import rasterio as rio
+from rasterio.mask import mask
+from shapely.geometry import Point, MultiPoint, mapping
+
+
+def min_bounds(paths):
+    minb = None
+    for path in paths:
+        with rio.open('%s/B5.tif' % path, 'r') as src:
+            bounds = MultiPoint([
+                Point(src.bounds.left, src.bounds.top),
+                Point(src.bounds.right, src.bounds.bottom)
+            ]).envelope
+            if minb is None:
+                minb = bounds
+            elif minb.area > bounds.area:
+                minb = bounds
+    return mapping(minb)
+
+
+def calc_ndvi(path, bounds):
+    with rio.open('%s/B5.TIF' % path, 'r') as src:
+        meta = src.meta
+        cropped, transform = mask(src, [bounds], crop=True)
+        nir = cropped
+        meta['transform'] = transform
+
+    with rio.open('%s/B4.TIF' % path, 'r') as src:
+        cropped, _ = mask(src, [bounds], crop=True)
+        r = cropped
+
+    ndvi = (nir - r) / (nir + r)
+    ndvi[nir == 0] = 0
+    ndvi[r == 0] = 0
+    del nir
+    del r
+    gc.collect()
+
+    return (ndvi, meta)
+
+
+bounds = min_bounds(['aleppo/2013', 'aleppo/2016'])
+
+first, meta = calc_ndvi('aleppo/2013', bounds)
+second, _ = calc_ndvi('aleppo/2016', bounds)
+result = second - first
+result = (result - np.mean(result) / np.std(result))
+result = np.clip(result, 0, 1).reshape(second.shape)
+result[first == 0] = 0
+result[second == 0] = 0
+meta['dtype'] = 'float64'
+meta['nodata'] = 0
+with rio.open('ndvi.tif', 'w', **meta) as dest:
+    dest.write(result)
+    </pre>
+    <p>Then we'll scale that result and verlay it over the pan band</p>
+    <pre class="f4 code fw3">
+import gc
+import numpy as np
+import rasterio as rio
+from rasterio.warp import reproject
+from rasterio.enums import Resampling
+
+
+def correct(img):
+    mask = np.logical_and(img > 0, img < 65535)
+    top = np.percentile(img[mask], 99.9)
+    bottom = np.percentile(img[mask], 0.01)
+    scaled = (img - bottom) / float(top - bottom) * 65535
+    return np.clip(scaled, 0, 65535).astype(np.uint16)
+
+with rio.open('ndvi.tif') as ndvi:
+    with rio.open('aleppo/2016/B8.tif') as pan:
+        pan_band = pan.read(1)
+        newndvi = np.empty(shape=pan_band.shape)
+        reproject(ndvi.read(), newndvi,
+                  src_transform=ndvi.transform,
+                  src_crs=ndvi.crs,
+                  dst_transform=pan.transform,
+                  dst_crs=pan.crs,
+                  resampling=Resampling.bilinear,
+                  threads=2)
+
+        pan_scaled = correct(pan_band) / 65536.0
+        ndvi_scaled = np.clip(newndvi / np.max(0.60), 0, 1)
+        del pan_band
+        del newndvi
+        gc.collect()
+        meta = pan.meta
+        meta['photometric'] = 'rgb'
+        meta['count'] = 3
+        meta['dtype'] = rio.uint8
+        meta['nodata'] = 0
+        with rio.open('out.tif', 'w', **meta) as out:
+            r = 1 - (1 - pan_scaled) * (1 - ndvi_scaled * 221.0 / 255)
+            r *= 255
+            out.write(r.astype(np.uint8), 1)
+            del r
+            gc.collect()
+
+            g = 1 - (1 - pan_scaled) * (1 - ndvi_scaled * 207.0 / 255)
+            g *= 255
+            out.write(g.astype(np.uint8), 2)
+            del g
+            gc.collect()
+
+            b = 1 - (1 - pan_scaled) * (1 - ndvi_scaled * 14.0 / 255)
+            b *= 255
+            out.write(b.astype(np.uint8), 3)
+            del b
+            gc.collect()
+    </pre>
+    <h2>Merging two rasters</h2>
+    <p>Sometimes you'll want to merge two rasters together, fortunately
+      rasterio has a simple way to do that</p>
+    <pre  class="f4 code fw3">
+rio merge one.tif two.tif out.tif
+    </pre>
+  </body>
+</html>
