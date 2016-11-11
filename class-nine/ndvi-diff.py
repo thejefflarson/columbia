@@ -33,29 +33,24 @@ def calc_ndvi(path, bounds):
         r = cropped
 
     ndvi = (nir - r) / (nir + r)
+    ndvi[nir == 0] = 0
+    ndvi[r == 0] = 0
     del nir
     del r
     gc.collect()
 
     return (ndvi, meta)
 
-# 36.3698313,36.9390273
-# 315108.649429;4026941.82273
-# 35.9704593,37.4608783
-# 361225.684022;3981766.93195
 
 bounds = min_bounds(['aleppo/2013', 'aleppo/2016'])
-bounds = mapping(MultiPoint([
-    Point(315108.649429, 4026941.82273),
-    Point(361225.684022, 3981766.93195)
-]))
 
-
-first, meta = calc_ndvi('aleppo/2013', bounds)
-second, _ = calc_ndvi('aleppo/2016', bounds)
-
+first, _ = calc_ndvi('aleppo/2013', bounds)
+second, meta = calc_ndvi('aleppo/2016', bounds)
 result = second - first
-
+result = (result - np.mean(result) / np.std(result))
+result = np.clip(result, 0, 1).reshape(second.shape)
+result[first == 0] = 0
+result[second == 0] = 0
 meta['dtype'] = 'float64'
 meta['nodata'] = 0
 with rio.open('ndvi.tif', 'w', **meta) as dest:
