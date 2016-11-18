@@ -25,7 +25,7 @@ with rio.open('ndvi.tif') as ndvi:
                   threads=2)
 
         pan_scaled = correct(pan_band) / 65536.0
-        ndvi_scaled = np.clip(newndvi, 0, 0.1) * 10
+        ndvi_scaled = np.clip(newndvi, 0, 0.2) * 5
         del pan_band
         del newndvi
         gc.collect()
