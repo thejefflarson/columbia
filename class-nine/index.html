@@ -18,7 +18,7 @@
       geometries where percent black is greater than 10%.
     </p>
     <h2 class="fw1 f3 mv3 bb ttu lh-title tracked">Case Study: the effect of war in Syria</h2>
-    <p>We're going to look at the effects of the war in Syria using NDVI. First we'll grab a landsat from 2013, and one from 2016</p>
+    <p>We're going to look at the effects of the war in Syria using NDVI. First we'll grab a landsat from 2013, and one from 2016.</p>
     <pre class="f4 code fw3">
 landsat search --lon 36.206353 --lat 37.0085005 -c1
 landsat search --lon 36.206353 --lat 37.0085005 -c1 --end 1/1/2014
@@ -59,7 +59,7 @@ def calc_ndvi(path, bounds):
         cropped, _ = mask(src, [bounds], crop=True)
         r = cropped
 
-    ndvi = (nir - r) / (nir + r).astype(np.float64
+    ndvi = (nir - r) / (nir + r).astype(np.float64)
     ndvi[nir == 0] = 0
     ndvi[r == 0] = 0
     del nir
@@ -140,10 +140,10 @@ with rio.open('ndvi.tif') as ndvi:
             del b
             gc.collect()
     </pre>
-    <h2>Merging two rasters</h2>
+    <h2 class="fw1 f3 mv3 bb ttu lh-title tracked">Merging two rasters</h2>
     <p>Sometimes you'll want to merge two rasters together, fortunately
-      rasterio has a simple way to do that</p>
-    <pre  class="f4 code fw3">
+      rasterio has a simple way to do that.</p>
+    <pre class="f4 code fw3">
 rio merge one.tif two.tif out.tif
     </pre>
   </body>
