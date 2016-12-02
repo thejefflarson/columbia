@@ -7,15 +7,125 @@
     <script src="../javascripts/topojson.min.js"></script>
     <script src="raster-map.js"></script>
     <style>
-      #durango path {
-        fill: none;
-        stroke: #00449E;
-        stroke-linejoin: round;
-        stroke-width: 1px;
-      }
+     #durango path {
+       fill: none;
+       stroke: #00449E;
+       stroke-linejoin: round;
+       stroke-width: 2px;
+       opacity: 0.7;
+     }
+     #durango .small {
+       stroke-width: 1px;
+       stroke: #001B44;
+       opacity: 0.2
+     }
+     #durango .contours {
+       stroke: #000;
+       opacity: 0.3;
+       stroke-width: 0.5px;
+     }
     </style>
   </head>
   <body>
+    <section>
+      <h1>Penultimate Class</h1>
+      <p>
+        Whelp, this is our second to last class. Next week, we'll plan on having
+        a study session on Wednesday, and we'll have final presentations next
+        Friday.
+      </p>
+      <p>
+        Personal note: I really enjoye this time together, and thanks for
+        sticking with me while I got my sea legs in this whole teaching thing.
+        You all are super smart, and I think you'll do wonders.
+      </p>
+    </section>
+    <section>
+      <h2>Other Types of Rasters</h2>
+      <p>
+        Rasters aren't limited to just satellite images, they also can be used
+        for data, like we've been experimenting with, or height, as in the
+        dataset we're looking at today.
+      </p>
+      <p>
+        We'll be playing around with a raster of my hometown of Durango,
+        Colorado. This type of raster called a DEM or Digital Elevation Model
+        contains height information rather than visible light.
+      </p>
+      <p>
+        First up, let's use a technique called hillshading so we can see a more
+        stylized version of the height information. This technique is centuries
+        old, but the most talented cartographer to use it was
+        <a href="https://www.library.ethz.ch/exhibit/imhof/imhof13_e.html">Eduard
+          Imhof</a> who is pretty legendary. Just look at this map of everest:
+        <img
+            src="https://mapzen-assets.s3.amazonaws.com/images/mapping-mountains/everest.jpg"
+            class="w-100">
+      </p>
+      <p>
+        So here is a basic algorithm to do the hillshading:
+      </p>
+    </section>
+    <pre>
+import rasterio as rio
+import numpy as np
+import math
+from scipy.ndimage import generic_filter
+
+with rio.open("durango.tif") as source:
+    meta = source.meta
+    dem = source.read(1)
+
+
+def normalize(x, y, z):
+    s = math.sqrt(x*x + y*y + z*z)
+    return [x / s, y / s, z / s]
+
+
+# from http://sunandblackcat.com/tipFullView.php?l=eng&topicid=6
+def shade(args):
+    args = args.reshape(3, 3)
+    dx = args[1][0] - args[1][2]
+    dy = args[0][1] - args[2][1]
+    vec = normalize(dx, dy, 0.5)
+    light = normalize(-0.7, -0.7, 0.3)
+    return np.array(vec).dot(np.array(light))
+
+dem = (dem - np.min(dem)) / (np.max(dem) - np.min(dem))
+shaded = generic_filter(dem, shade, size=(3, 3))
+shaded = (shaded - np.min(shaded)) / (np.max(shaded) - np.min(shaded))
+shaded *= 255
+print(np.min(shaded), np.max(shaded))
+
+meta['dtype'] = 'uint8'
+meta['nodata'] = 0
+with rio.open('shaded.tif', 'w', **meta) as dest:
+    dest.write(shaded.reshape(dem.shape).astype(np.uint8), indexes=1)
+    </pre>
+    <section>
+      <p>
+        GDAL comes with a tool to do this for you called gdaldem, you can use it
+        this way:
+      </p>
+      <pre>
+gdaldem hillshade in.tif out.tif
+      </pre>
+    </section>
+    <section>
+      <h2>Using GDAL and OGR to prepare our data for the web</h2>
+      <p>
+        Thankfully, putting rasters on the web is much easier than what we were
+        dealing with when were doing vector stuff. The important parts are:
+        1. make sure your raster is projected into the final you want to use,
+        and 2. make sure your raster has the same bounds as any associated
+        vector data.
+      </p>
+      <p>
+        First, however, we need to process our data, unlike previous classes
+        where we wrote software to do this, let's take a tour through the GDAL
+        and OGR tools.
+      </p>
+    </section>
     <pre>
 function gdal_extent() {
     if [ -z "$1" ]; then
@@ -31,10 +141,6 @@ function gdal_extent() {
         tr -d "[(,]")
     echo -n "$EXTENT"
 }
-
-ogr2ogr durango.json tl_2016_08067_roads.shp -f GeoJSON -simplify 0.01 \
-  -clipdst $(gdal_extent durango.tif) \
-  -sql "select * from tl_2016_08067_roads where FULLNAME is not NULL"
 
 function ogr_extent() {
     if [ -z "$1" ]; then
@@ -52,13 +158,84 @@ function ogr_extent() {
     echo -n "$EXTENT"
 }
 
+ogr2ogr durango.json tl_2016_08067_roads.shp -f GeoJSON \
+  -clipdst $(gdal_extent durango.tif) \
+  -sql "select * from tl_2016_08067_roads where FULLNAME is not NULL"
+
+gdal_contour durango.tif contours.json -f GeoJSON -i 250
+ogr2ogr durango-contours.json contours.json -simplify 0.0005 -f GeoJSON \
+  -clipdst $(gdal_extent durango.tif)
+
 gdal_translate shaded.tif durango-clipped.tif -projwin $(ogr_extent durango.json)
 gdalwarp durango-clipped.tif durango-large.tif -t_srs EPSG:3857 -r lanczos
 gdalwarp durango-large.tif durango-smaller.tif -ts 401 623 -r lanczos
 gdal_translate durango-smaller.tif durango.png -of PNG
     </pre>
-
-
+    <section>
+      <h2>Ready for d3</h2>
+      <p>
+        Now that we have contours and our raster processed, we'll build a little
+        map.
+      </p>
+    </section>
     <svg id="durango"></svg>
+    <pre>
+&lt;style>
+ #durango path {
+   fill: none;
+   stroke: #00449E;
+   stroke-linejoin: round;
+   stroke-width: 2px;
+   opacity: 0.7;
+ }
+ #durango .small {
+   stroke-width: 1px;
+   stroke: #001B44;
+   opacity: 0.3
+ }
+ #durango .contours {
+   stroke: #000;
+   opacity: 0.3;
+   stroke-width: 0.5px;
+ }
+&lt;/style>
+d3.json('durango.json', function(error, data) {
+  d3.json('durango-contours.json', function(error, contours) {
+    if(error) throw error;
+
+    var durango = d3.select("#durango");
+
+    durango.style("width", 401)
+      .style("height", 623);
+
+    var path = d3.geoPath()
+          .projection(d3.geoMercator()
+                      .fitSize([401, 623], data));
+
+    durango.append('image')
+      .attr("href", "durango.png")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", 401)
+      .attr("height", 623);
+
+
+    durango.append('path')
+      .datum(contours)
+      .attr('class', 'contours')
+      .attr('d', path);
+
+    durango.selectAll("path")
+      .data(data.features)
+      .enter()
+      .append("path")
+      .attr("d", path)
+      .attr("class", function(it) {
+        if(it.properties.MTFCC == "S1400") return "small";
+        return "big";
+      });
+  });
+});
+    </pre>
   </body>
 </html>
