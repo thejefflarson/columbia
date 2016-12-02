@@ -26,33 +26,31 @@
      }
     </style>
   </head>
-  <body>
-    <section>
-      <h1>Penultimate Class</h1>
-      <p>
+  <body class="w-100 sans-serif fw2 f4 lh-copy ph7 pv2 bg-lightest-blue">
+    <section class="measure-wide">
+      <h2 class="f3 fw3 pt5 bb b--blue">Penultimate Class</h2>
+      <p class="pb2">
         Whelp, this is our second to last class. Next week, we'll plan on having
         a study session on Wednesday, and we'll have final presentations next
         Friday.
       </p>
-      <p>
+      <p class="pb2">
         Personal note: I really enjoye this time together, and thanks for
         sticking with me while I got my sea legs in this whole teaching thing.
         You all are super smart, and I think you'll do wonders.
       </p>
-    </section>
-    <section>
-      <h2>Other Types of Rasters</h2>
-      <p>
+      <h2 class="f3 fw3 pt5 bb b--blue">Other Types of Rasters</h2>
+      <p class="pb2">
         Rasters aren't limited to just satellite images, they also can be used
         for data, like we've been experimenting with, or height, as in the
         dataset we're looking at today.
       </p>
-      <p>
+      <p class="pb2">
         We'll be playing around with a raster of my hometown of Durango,
         Colorado. This type of raster called a DEM or Digital Elevation Model
         contains height information rather than visible light.
       </p>
-      <p>
+      <p class="pb2">
         First up, let's use a technique called hillshading so we can see a more
         stylized version of the height information. This technique is centuries
         old, but the most talented cartographer to use it was
@@ -62,7 +60,7 @@
             src="https://mapzen-assets.s3.amazonaws.com/images/mapping-mountains/everest.jpg"
             class="w-100">
       </p>
-      <p>
+      <p class="pb2">
         So here is a basic algorithm to do the hillshading:
       </p>
     </section>
@@ -102,8 +100,8 @@ meta['nodata'] = 0
 with rio.open('shaded.tif', 'w', **meta) as dest:
     dest.write(shaded.reshape(dem.shape).astype(np.uint8), indexes=1)
     </pre>
-    <section>
-      <p>
+    <section class="measure-wide">
+      <p class="pb2">
         GDAL comes with a tool to do this for you called gdaldem, you can use it
         this way:
       </p>
@@ -111,22 +109,23 @@ with rio.open('shaded.tif', 'w', **meta) as dest:
 gdaldem hillshade in.tif out.tif
       </pre>
     </section>
-    <section>
-      <h2>Using GDAL and OGR to prepare our data for the web</h2>
-      <p>
+    <section class="measure-wide">
+      <h2 class="f3 fw3 pt5 bb b--blue">Using GDAL and OGR to prepare our data for the web</h2>
+      <p class="pb2">
         Thankfully, putting rasters on the web is much easier than what we were
         dealing with when were doing vector stuff. The important parts are:
-        1. make sure your raster is projected into the final you want to use,
+        1. make sure your raster is projected into the final projection you want to use,
         and 2. make sure your raster has the same bounds as any associated
         vector data.
       </p>
-      <p>
+      <p class="pb2">
         First, however, we need to process our data, unlike previous classes
         where we wrote software to do this, let's take a tour through the GDAL
         and OGR tools.
       </p>
     </section>
     <pre>
+# from https://github.com/dwtkns/gdal-cheat-sheet
 function gdal_extent() {
     if [ -z "$1" ]; then
         echo "Missing arguments. Syntax:"
@@ -171,9 +170,9 @@ gdalwarp durango-clipped.tif durango-large.tif -t_srs EPSG:3857 -r lanczos
 gdalwarp durango-large.tif durango-smaller.tif -ts 401 623 -r lanczos
 gdal_translate durango-smaller.tif durango.png -of PNG
     </pre>
-    <section>
-      <h2>Ready for d3</h2>
-      <p>
+    <section class="measure-wide">
+      <h2 class="f3 fw3 pt5 bb b--blue">Ready for d3</h2>
+      <p class="pb2">
         Now that we have contours and our raster processed, we'll build a little
         map.
       </p>
